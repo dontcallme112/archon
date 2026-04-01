@@ -1,5 +1,4 @@
-import 'package:student_app/domain/entities/entities.dart';
-
+import '../entities/entities.dart';
 
 abstract class ProjectRepository {
   Future<List<ProjectEntity>> getFeedProjects({
