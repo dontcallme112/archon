@@ -7,7 +7,7 @@ import 'package:student_app/presentation/applications_management/pages/applicati
 import 'package:student_app/presentation/common/widgets/main_scaffold.dart';
 import 'package:student_app/presentation/create_project/pages/create_project_page.dart';
 import 'package:student_app/presentation/edit_project/pages/edit_project_page.dart';
-import 'package:student_app/presentation/feed/pages/feed_page.dart';
+import 'package:student_app/presentation/feed/page/feed_page.dart';
 import 'package:student_app/presentation/notifications/pages/notifications_page.dart';
 import 'package:student_app/presentation/onboarding/pages/onboarding_page.dart';
 import 'package:student_app/presentation/profile/pages/profile_page.dart';

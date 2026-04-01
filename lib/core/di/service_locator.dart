@@ -1,6 +1,20 @@
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:student_app/core/network/api_client.dart';
+import 'package:student_app/data/datasources/application_remote_datasource.dart';
+import 'package:student_app/data/datasources/local_storage_datasource.dart';
+import 'package:student_app/data/datasources/project_remote_datasource.dart';
+import 'package:student_app/data/datasources/user_notification_datasource.dart';
+import 'package:student_app/data/repositories/other_repository_impl.dart';
+import 'package:student_app/data/repositories/project_repository_impl.dart';
 import 'package:student_app/domain/repositories/repositories.dart';
+import 'package:student_app/domain/usecases/other_usecases.dart';
+import 'package:student_app/domain/usecases/project/project_usecases.dart';
+import 'package:student_app/presentation/applications_management/bloc/app_mgmt_bloc.dart';
+import 'package:student_app/presentation/create_project/bloc/create_project_bloc.dart';
+import 'package:student_app/presentation/feed/bloc/feed_bloc.dart';
+import 'package:student_app/presentation/notifications/bloc/notifications_bloc.dart';
+import 'package:student_app/presentation/project/bloc/project_bloc.dart';
 
 
 final sl = GetIt.instance;
