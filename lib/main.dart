@@ -1,27 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:student_app/presentation/feed/bloc/feed_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-import 'core/di/service_locator.dart';
+import 'firebase_options.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'presentation/notifications/bloc/notifications_bloc.dart';
-
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'presentation/auth/bloc/auth_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await dotenv.load(fileName: ".env");
-
-  // Потом инициализируем Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   // Только портретная ориентация
   await SystemChrome.setPreferredOrientations([
@@ -29,8 +17,10 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Инициализируем все зависимости (DI)
-  await initDependencies();
+  // Инициализируем Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(const ProjectHubApp());
 }
@@ -40,17 +30,8 @@ class ProjectHubApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      // Глобальные BLoC — живут всё время работы приложения
-      providers: [
-        BlocProvider<FeedBloc>(
-          create: (_) => sl<FeedBloc>()..add(FeedLoadRequested()),
-        ),
-        BlocProvider<NotificationsBloc>(
-          create: (_) =>
-              sl<NotificationsBloc>()..add(NotificationsLoadRequested()),
-        ),
-      ],
+    return BlocProvider<AuthBloc>(
+      create: (_) => AuthBloc()..add(AuthCheckRequested()),
       child: MaterialApp.router(
         title: 'ProjectHub',
         debugShowCheckedModeBanner: false,
