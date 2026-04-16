@@ -1,9 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 // ─── Events ───────────────────────────────────────────────────────────────
 
 abstract class AuthEvent {}
+
+class AuthCheckRequested extends AuthEvent {}
 
 class AuthLoginRequested extends AuthEvent {
   final String email;
@@ -22,9 +25,9 @@ class AuthRegisterRequested extends AuthEvent {
   });
 }
 
-class AuthLogoutRequested extends AuthEvent {}
+class AuthGoogleSignInRequested extends AuthEvent {}
 
-class AuthCheckRequested extends AuthEvent {}
+class AuthLogoutRequested extends AuthEvent {}
 
 // ─── State ────────────────────────────────────────────────────────────────
 
@@ -50,11 +53,14 @@ class AuthError extends AuthState {
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Исправлено: используем GoogleSignIn() правильно
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
 
   AuthBloc() : super(AuthInitial()) {
     on<AuthCheckRequested>(_onCheck);
     on<AuthLoginRequested>(_onLogin);
     on<AuthRegisterRequested>(_onRegister);
+    on<AuthGoogleSignInRequested>(_onGoogleSignIn);
     on<AuthLogoutRequested>(_onLogout);
   }
 
@@ -98,7 +104,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: event.email.trim(),
         password: event.password,
       );
-      // Сохраняем имя пользователя
       await credential.user!.updateDisplayName(event.name.trim());
       emit(AuthAuthenticated(credential.user!));
     } on FirebaseAuthException catch (e) {
@@ -108,10 +113,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
+  Future<void> _onGoogleSignIn(
+    AuthGoogleSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        emit(AuthUnauthenticated());
+        return;
+      }
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      final userCredential = await _auth.signInWithCredential(credential);
+      emit(AuthAuthenticated(userCredential.user!));
+    } on FirebaseAuthException catch (e) {
+      emit(AuthError(_mapFirebaseError(e.code)));
+    } catch (e) {
+      emit(AuthError('Не удалось войти через Google. Попробуй ещё раз.'));
+    }
+  }
+
   Future<void> _onLogout(
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
+    await _googleSignIn.signOut();
     await _auth.signOut();
     emit(AuthUnauthenticated());
   }
@@ -132,6 +163,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return 'Слишком много попыток. Попробуй позже';
       case 'network-request-failed':
         return 'Нет подключения к интернету';
+      case 'account-exists-with-different-credential':
+        return 'Аккаунт уже существует с другим методом входа';
       default:
         return 'Ошибка авторизации. Попробуй ещё раз';
     }

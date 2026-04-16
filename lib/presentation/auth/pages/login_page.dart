@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/auth_bloc.dart';
+import '../widgets/google_sign_in_button.dart';
 import '../../common/widgets/common_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -40,8 +41,7 @@ class _LoginPageState extends State<LoginPage> {
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-              ),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
               margin: const EdgeInsets.all(AppSizes.md),
             ),
           );
@@ -59,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: AppSizes.xl),
 
-                  // ─── Logo / Header ──────────────────────────
+                  // ─── Logo ──────────────────────────────────────
                   Center(
                     child: Column(
                       children: [
@@ -97,11 +97,35 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: AppSizes.xxl),
 
-                  // ─── Form ────────────────────────────────────
                   Text('Войти в аккаунт', style: AppTypography.h2),
                   const SizedBox(height: AppSizes.lg),
 
-                  // Email
+                  // ─── Google button ─────────────────────────────
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) => GoogleSignInButton(
+                      isLoading: state is AuthLoading,
+                      onTap: () => context
+                          .read<AuthBloc>()
+                          .add(AuthGoogleSignInRequested()),
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.md),
+
+                  // ─── Divider ───────────────────────────────────
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppSizes.sm),
+                        child: Text('или', style: AppTypography.caption),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: AppSizes.md),
+
+                  // ─── Email ─────────────────────────────────────
                   AppTextField(
                     hint: 'example@mail.com',
                     label: 'Email',
@@ -117,7 +141,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: AppSizes.md),
 
-                  // Password
+                  // ─── Password ──────────────────────────────────
                   AppTextField(
                     hint: '••••••••',
                     label: 'Пароль',
@@ -133,8 +157,8 @@ class _LoginPageState extends State<LoginPage> {
                         color: AppColors.grey,
                         size: 20,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword),
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Введите пароль';
@@ -144,30 +168,28 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: AppSizes.xl),
 
-                  // ─── Login button ─────────────────────────────
+                  // ─── Login button ──────────────────────────────
                   BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, state) {
-                      return PrimaryButton(
-                        label: 'Войти',
-                        icon: Icons.login_rounded,
-                        isLoading: state is AuthLoading,
-                        onTap: _submit,
-                      );
-                    },
+                    builder: (context, state) => PrimaryButton(
+                      label: 'Войти',
+                      icon: Icons.login_rounded,
+                      isLoading: state is AuthLoading,
+                      onTap: _submit,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.md),
 
-                  // ─── Register link ────────────────────────────
+                  // ─── Register link ─────────────────────────────
                   Center(
                     child: GestureDetector(
                       onTap: () => context.push('/register'),
                       child: RichText(
                         text: TextSpan(
-                          style: AppTypography.body,
                           children: [
-                            const TextSpan(
+                            TextSpan(
                               text: 'Нет аккаунта? ',
-                              style: TextStyle(color: AppColors.grey),
+                              style: AppTypography.body
+                                  .copyWith(color: AppColors.grey),
                             ),
                             TextSpan(
                               text: 'Зарегистрироваться',

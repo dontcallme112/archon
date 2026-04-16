@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/auth_bloc.dart';
+import '../widgets/google_sign_in_button.dart';
 import '../../common/widgets/common_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -45,8 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-              ),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
               margin: const EdgeInsets.all(AppSizes.md),
             ),
           );
@@ -62,7 +62,6 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ─── Back button ──────────────────────────────
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
                     onPressed: () => context.pop(),
@@ -71,7 +70,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: AppSizes.lg),
 
-                  // ─── Header ───────────────────────────────────
                   Text('Создать аккаунт', style: AppTypography.h1),
                   const SizedBox(height: AppSizes.xs),
                   Text(
@@ -80,7 +78,32 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: AppSizes.xl),
 
-                  // ─── Name ─────────────────────────────────────
+                  // ─── Google button ─────────────────────────────
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) => GoogleSignInButton(
+                      isLoading: state is AuthLoading,
+                      onTap: () => context
+                          .read<AuthBloc>()
+                          .add(AuthGoogleSignInRequested()),
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.md),
+
+                  // ─── Divider ───────────────────────────────────
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppSizes.sm),
+                        child: Text('или', style: AppTypography.caption),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: AppSizes.md),
+
+                  // ─── Name ──────────────────────────────────────
                   AppTextField(
                     hint: 'Алексей Петров',
                     label: 'Имя',
@@ -95,7 +118,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: AppSizes.md),
 
-                  // ─── Email ────────────────────────────────────
+                  // ─── Email ─────────────────────────────────────
                   AppTextField(
                     hint: 'example@mail.com',
                     label: 'Email',
@@ -111,7 +134,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: AppSizes.md),
 
-                  // ─── Password ─────────────────────────────────
+                  // ─── Password ──────────────────────────────────
                   AppTextField(
                     hint: '••••••••',
                     label: 'Пароль',
@@ -127,8 +150,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         color: AppColors.grey,
                         size: 20,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword),
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Введите пароль';
@@ -138,7 +161,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: AppSizes.md),
 
-                  // ─── Confirm password ─────────────────────────
+                  // ─── Confirm ───────────────────────────────────
                   AppTextField(
                     hint: '••••••••',
                     label: 'Подтвердить пароль',
@@ -154,8 +177,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         color: AppColors.grey,
                         size: 20,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
+                      onPressed: () => setState(
+                          () => _obscureConfirm = !_obscureConfirm),
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Повторите пароль';
@@ -166,30 +189,28 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: AppSizes.xl),
 
-                  // ─── Register button ──────────────────────────
+                  // ─── Register button ───────────────────────────
                   BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, state) {
-                      return PrimaryButton(
-                        label: 'Зарегистрироваться',
-                        icon: Icons.rocket_launch_rounded,
-                        isLoading: state is AuthLoading,
-                        onTap: _submit,
-                      );
-                    },
+                    builder: (context, state) => PrimaryButton(
+                      label: 'Зарегистрироваться',
+                      icon: Icons.rocket_launch_rounded,
+                      isLoading: state is AuthLoading,
+                      onTap: _submit,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.md),
 
-                  // ─── Login link ───────────────────────────────
+                  // ─── Login link ────────────────────────────────
                   Center(
                     child: GestureDetector(
                       onTap: () => context.pop(),
                       child: RichText(
                         text: TextSpan(
-                          style: AppTypography.body,
                           children: [
-                            const TextSpan(
+                            TextSpan(
                               text: 'Уже есть аккаунт? ',
-                              style: TextStyle(color: AppColors.grey),
+                              style: AppTypography.body
+                                  .copyWith(color: AppColors.grey),
                             ),
                             TextSpan(
                               text: 'Войти',
