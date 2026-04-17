@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:student_app/domain/repositories/firestore_user_repository.dart';
 
 // ─── Events ───────────────────────────────────────────────────────────────
 
@@ -105,6 +106,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
       await credential.user!.updateDisplayName(event.name.trim());
+      final userRepo = FirestoreUserRepository();
+      await userRepo.ensureUserExists();
       emit(AuthAuthenticated(credential.user!));
     } on FirebaseAuthException catch (e) {
       emit(AuthError(_mapFirebaseError(e.code)));
@@ -130,6 +133,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         idToken: googleAuth.idToken,
       );
       final userCredential = await _auth.signInWithCredential(credential);
+      final userRepo = FirestoreUserRepository();
+      await userRepo.ensureUserExists();
       emit(AuthAuthenticated(userCredential.user!));
     } on FirebaseAuthException catch (e) {
       emit(AuthError(_mapFirebaseError(e.code)));
