@@ -11,9 +11,13 @@ class FirestoreProjectRepository implements ProjectRepository {
 
   @override
   Future<List<ProjectEntity>> getFeedProjects({
-    String? category, String? format, String? level, String? query,
+    String? category,
+    String? format,
+    String? level,
+    String? query,
   }) async {
-    Query q = _db.collection('projects')
+    Query q = _db
+        .collection('projects')
         .where('isActive', isEqualTo: true)
         .orderBy('createdAt', descending: true);
 
@@ -43,7 +47,6 @@ class FirestoreProjectRepository implements ProjectRepository {
     required String level,
   }) async {
     final user = _auth.currentUser!;
-    
     final ref = await _db.collection('projects').add({
       'title': title,
       'shortDescription': shortDescription,
@@ -56,17 +59,17 @@ class FirestoreProjectRepository implements ProjectRepository {
       'level': level,
       'authorId': user.uid,
       'authorName': user.displayName ?? '',
-      'authorAvatarUrl': user.photoURL,
-      'category': 'dev',
+      'authorAvatar': user.photoURL,
+      'category': 'Разработка',
       'isActive': true,
       'createdAt': FieldValue.serverTimestamp(),
     });
-
     return getProjectById(ref.id);
   }
 
   @override
-  Future<ProjectEntity> updateProject(String id, Map<String, dynamic> data) async {
+  Future<ProjectEntity> updateProject(
+      String id, Map<String, dynamic> data) async {
     await _db.collection('projects').doc(id).update({
       ...data,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -75,34 +78,43 @@ class FirestoreProjectRepository implements ProjectRepository {
   }
 
   @override
-  Future<void> deleteProject(String id) async {
-    await _db.collection('projects').doc(id).delete();
-  }
+  Future<void> deleteProject(String id) =>
+      _db.collection('projects').doc(id).delete();
 
   @override
   Future<void> toggleFavorite(String projectId) async {
-    final ref = _db.collection('users').doc(_uid)
-        .collection('favorites').doc(projectId);
+    final ref = _db
+        .collection('users')
+        .doc(_uid)
+        .collection('favorites')
+        .doc(projectId);
     final doc = await ref.get();
     doc.exists ? await ref.delete() : await ref.set({'projectId': projectId});
   }
 
   @override
   Future<List<ProjectEntity>> getFavorites() async {
-    final favSnap = await _db.collection('users').doc(_uid)
-        .collection('favorites').get();
+    final favSnap = await _db
+        .collection('users')
+        .doc(_uid)
+        .collection('favorites')
+        .get();
     final ids = favSnap.docs.map((d) => d.id).toList();
     if (ids.isEmpty) return [];
-
-    final snap = await _db.collection('projects')
-        .where(FieldPath.documentId, whereIn: ids).get();
+    final snap = await _db
+        .collection('projects')
+        .where(FieldPath.documentId, whereIn: ids)
+        .get();
     return snap.docs.map(_fromDoc).toList();
   }
 
   @override
   Future<List<ProjectEntity>> searchProjects({
-    List<String>? skills, String? deadline,
-    String? format, String? level, int? maxSlots,
+    List<String>? skills,
+    String? deadline,
+    String? format,
+    String? level,
+    int? maxSlots,
   }) async {
     Query q = _db.collection('projects').where('isActive', isEqualTo: true);
     if (format != null) q = q.where('format', isEqualTo: format);
@@ -120,21 +132,22 @@ class FirestoreProjectRepository implements ProjectRepository {
       fullDescription: d['fullDescription'] ?? '',
       requiredSkills: List<String>.from(d['requiredSkills'] ?? []),
       deadline: d['deadline'] ?? '',
-      format: d['format'] ?? 'online',
+      format: d['format'] ?? 'Онлайн',
       level: d['level'] ?? 'junior',
       totalSlots: d['totalSlots'] ?? 0,
       filledSlots: d['filledSlots'] ?? 0,
       author: UserEntity(
         id: d['authorId'] ?? '',
         name: d['authorName'] ?? '',
-        avatarUrl: d['authorAvatarUrl'],
+        avatarUrl: d['authorAvatar'],
         skills: [],
         level: 'junior',
       ),
       teamMembers: [],
-      category: d['category'] ?? 'dev',
+      category: d['category'] ?? 'Разработка',
       isActive: d['isActive'] ?? true,
-      createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt:
+          (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 }

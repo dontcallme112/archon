@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:student_app/domain/repositories/firestore_project_repository.dart';
 import '../../common/widgets/common_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_typography.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 class CreateProjectPage extends StatefulWidget {
   const CreateProjectPage({super.key});
@@ -232,24 +235,51 @@ class _CreateProjectPageState extends State<CreateProjectPage> {
     setState(() => _step = 1);
   }
 
-  Future<void> _publish() async {
-    if (!_step2Valid) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Выбери навыки и дедлайн'),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-        margin: const EdgeInsets.all(AppSizes.md),
-      ));
-      return;
-    }
-    setState(() => _isPublishing = true);
-    await Future.delayed(const Duration(seconds: 1));
+Future<void> _publish() async {
+  if (!_step2Valid) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: const Text('Выбери навыки и дедлайн'),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
+      margin: const EdgeInsets.all(AppSizes.md),
+    ));
+    return;
+  }
+  setState(() => _isPublishing = true);
+
+  try {
+    final repo = FirestoreProjectRepository();
+    final deadline = _deadline!;
+
+    await repo.createProject(
+      title: _titleController.text.trim(),
+      shortDescription: _shortDescController.text.trim(),
+      fullDescription: _fullDescController.text.trim(),
+      skills: _selectedSkills.toList(),
+      slots: _slots,
+      deadline: '${deadline.day}.${deadline.month}.${deadline.year}',
+      format: _format,
+      level: _level,
+    );
+
     if (!mounted) return;
     setState(() => _isPublishing = false);
     _showSuccess();
+  } catch (e) {
+    if (!mounted) return;
+    setState(() => _isPublishing = false);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Ошибка: $e'),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
+      margin: const EdgeInsets.all(AppSizes.md),
+    ));
   }
+}
 
   Future<void> _pickDeadline() async {
     final picked = await showDatePicker(
