@@ -30,18 +30,23 @@ class AppRouter {
     redirect: (context, state) {
       final user = FirebaseAuth.instance.currentUser;
       final isLoggedIn = user != null;
-      final isAuthRoute = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register';
+      final location = state.matchedLocation;
 
-      // Не авторизован → на логин
+      final protectedRoutes = [
+        '/project/create',
+        '/profile',
+        '/notifications',
+      ];
+
+      final isAuthRoute = location == '/login' || location == '/register';
+      final isProtected = protectedRoutes.any((r) => location.startsWith(r));
+
+      if (!isLoggedIn && isProtected) return '/login';
       if (!isLoggedIn && !isAuthRoute) return '/login';
-
-      // Авторизован, но на логине/регистрации → на ленту
       if (isLoggedIn && isAuthRoute) return '/feed';
 
       return null;
     },
-
     routes: [
       // ─── Auth routes ────────────────────────────────────────
       GoRoute(

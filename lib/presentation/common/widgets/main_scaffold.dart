@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
@@ -49,7 +50,13 @@ class MainScaffold extends StatelessWidget {
                   isSelected: index == 1,
                   onTap: () => context.go('/search'),
                 ),
-                _AddButton(onTap: () => context.push('/project/create')),
+                _AddButton(onTap: () {
+                  if (FirebaseAuth.instance.currentUser == null) {
+                    context.push('/register');
+                    return;
+                  }
+                  context.push('/project/create');
+                }),
                 _NavItem(
                   icon: Icons.notifications_rounded,
                   label: 'Уведомления',

@@ -7,17 +7,20 @@ class FirestoreUserRepository implements UserRepository {
   final _db = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
-  String get _uid => _auth.currentUser!.uid;
+  // Геттер для безопасного получения UID
+  String? get _uid => _auth.currentUser?.uid;
 
-  // Создаёт документ пользователя если его ещё нет
-  Future<void> ensureUserExists() async {
-    final user = _auth.currentUser!;
+  // Исправлено: теперь принимает опциональное имя для первичной регистрации
+  Future<void> ensureUserExists({String? name}) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
     final doc = await _db.collection('users').doc(user.uid).get();
     
     if (!doc.exists) {
       await _db.collection('users').doc(user.uid).set({
         'id': user.uid,
-        'name': user.displayName ?? '',
+        'name': name ?? user.displayName ?? 'Новый пользователь',
         'email': user.email ?? '',
         'avatarUrl': user.photoURL,
         'telegram': null,
@@ -30,9 +33,19 @@ class FirestoreUserRepository implements UserRepository {
     }
   }
 
+  // Стрим для прослушивания данных профиля в реальном времени
+  Stream<UserEntity?> userStream() {
+    if (_uid == null) return Stream.value(null);
+    return _db.collection('users').doc(_uid).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return _userFromDoc(doc);
+    });
+  }
+
   @override
   Future<UserEntity?> getCurrentUser() async {
-    final doc = await _db.collection('users').doc(_uid).get();
+    if (_uid == null) return null;
+    final doc = await _db.collection('users').doc(_uid!).get();
     if (!doc.exists) return null;
     return _userFromDoc(doc);
   }
@@ -45,6 +58,8 @@ class FirestoreUserRepository implements UserRepository {
     String? bio,
     String? telegram,
   }) async {
+    if (_uid == null) throw Exception('User not authenticated');
+    
     await _db.collection('users').doc(_uid).update({
       'skills': skills,
       'level': level,
@@ -58,9 +73,10 @@ class FirestoreUserRepository implements UserRepository {
 
   @override
   Future<List<ProjectEntity>> getMyProjects() async {
+    if (_uid == null) return [];
     final snap = await _db
         .collection('projects')
-        .where('authorId', isEqualTo: _uid)
+        .where('ownerId', isEqualTo: _uid)
         .orderBy('createdAt', descending: true)
         .get();
     return snap.docs.map(_projectFromDoc).toList();

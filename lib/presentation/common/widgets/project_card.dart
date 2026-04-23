@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../domain/entities/entities.dart';
@@ -142,7 +143,13 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
                       width: double.infinity,
                       height: 44,
                       child: ElevatedButton.icon(
-                        onPressed: () => context.push('/project/${project.id}/apply'),
+                        onPressed: () {
+                          if (FirebaseAuth.instance.currentUser == null) {
+                            context.push('/register');
+                            return;
+                          }
+                          context.push('/project/${project.id}/apply');
+                        },
                         icon: const Icon(Icons.send_rounded, size: 16),
                         label: const Text('Откликнуться'),
                       ),

@@ -1,13 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:student_app/presentation/common/widgets/project_card.dart';
-
 import '../../common/widgets/common_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../../domain/entities/entities.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -24,47 +21,9 @@ class _FeedPageState extends State<FeedPage> {
   final _categories = ['Все', 'Дизайн', 'Разработка', 'Маркетинг'];
   final _formats = ['Все', 'Онлайн', 'Оффлайн'];
 
-  Stream<List<ProjectEntity>> _buildStream() {
-    Query q = FirebaseFirestore.instance
-        .collection('projects')
-        .where('isActive', isEqualTo: true)
-        .orderBy('createdAt', descending: true);
-
-    if (_activeCategory != 'Все') {
-      q = q.where('category', isEqualTo: _activeCategory);
-    }
-    if (_activeFormat != 'Все') {
-      q = q.where('format', isEqualTo: _activeFormat);
-    }
-
-    return q.snapshots().map((snap) => snap.docs.map((doc) {
-          final d = doc.data() as Map<String, dynamic>;
-          return ProjectEntity(
-            id: doc.id,
-            title: d['title'] ?? '',
-            shortDescription: d['shortDescription'] ?? '',
-            fullDescription: d['fullDescription'] ?? '',
-            requiredSkills: List<String>.from(d['skills'] ?? []),
-            deadline: d['deadline'] ?? '',
-            format: d['format'] ?? 'Онлайн',
-            level: d['level'] ?? 'junior',
-            totalSlots: d['slots'] ?? 0,
-            filledSlots: d['filledSlots'] ?? 0,
-            author: UserEntity(
-              id: d['authorId'] ?? '',
-              name: d['authorName'] ?? '',
-              avatarUrl: d['authorAvatar'],
-              skills: [],
-              level: 'junior',
-            ),
-            teamMembers: [],
-            category: d['category'] ?? 'Разработка',
-            isActive: d['isActive'] ?? true,
-            createdAt:
-                (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-          );
-        }).toList());
-  }
+  // TODO: заменить на Firestore stream
+  // Stream<List<ProjectEntity>> get _projectsStream =>
+  //     FirebaseFirestore.instance.collection('projects').snapshots()...
 
   @override
   void dispose() {
@@ -79,6 +38,7 @@ class _FeedPageState extends State<FeedPage> {
       body: SafeArea(
         child: Column(
           children: [
+            // ─── Search bar ────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                   AppSizes.md, AppSizes.md, AppSizes.md, 0),
@@ -97,6 +57,11 @@ class _FeedPageState extends State<FeedPage> {
                         filled: true,
                         fillColor: AppColors.white,
                         border: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppSizes.radiusMd),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
                           borderRadius:
                               BorderRadius.circular(AppSizes.radiusMd),
                           borderSide: BorderSide.none,
@@ -122,8 +87,9 @@ class _FeedPageState extends State<FeedPage> {
                 ],
               ),
             ),
-            const SizedBox(height: AppSizes.sm),
 
+            // ─── Category filters ──────────────────────────────
+            const SizedBox(height: AppSizes.sm),
             SizedBox(
               height: 36,
               child: ListView.separated(
@@ -144,8 +110,8 @@ class _FeedPageState extends State<FeedPage> {
               ),
             ),
 
+            // ─── Format filters ────────────────────────────────
             const SizedBox(height: 6),
-
             SizedBox(
               height: 32,
               child: ListView.separated(
@@ -184,44 +150,45 @@ class _FeedPageState extends State<FeedPage> {
                 },
               ),
             ),
-
             const SizedBox(height: AppSizes.sm),
 
-            Expanded(
-              child: StreamBuilder<List<ProjectEntity>>(
-                stream: _buildStream(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return const Center(
-                        child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(
-                        child: Text('Ошибка: ${snapshot.error}'));
-                  }
-                  final projects = snapshot.data ?? [];
-                  if (projects.isEmpty) return _EmptyFeed();
-
-                  return RefreshIndicator(
-                    onRefresh: () async => setState(() {}),
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(AppSizes.md),
-                      itemCount: projects.length,
-                      itemBuilder: (context, i) => ProjectCard(
-                        project: projects[i],
+            // ─── Auth banner ───────────────────────────────────
+            if (FirebaseAuth.instance.currentUser == null)
+              GestureDetector(
+                onTap: () => context.push('/register'),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: AppSizes.md),
+                  padding: const EdgeInsets.all(AppSizes.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.lock_rounded, color: Colors.white),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Войди чтобы откликаться на проекты',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
-                    ),
-                  );
-                },
+                      const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+                    ],
+                  ),
+                ),
               ),
-            ),
+
+            // ─── Content ───────────────────────────────────────
+            Expanded(child: _EmptyFeed()),
           ],
         ),
       ),
     );
   }
 }
+
+// ─── Empty state ──────────────────────────────────────────────────────────
 
 class _EmptyFeed extends StatelessWidget {
   @override
@@ -232,6 +199,7 @@ class _EmptyFeed extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Illustration
             Container(
               width: 120,
               height: 120,
@@ -246,17 +214,21 @@ class _EmptyFeed extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSizes.lg),
-            Text('Проектов пока нет',
-                style: AppTypography.h2,
-                textAlign: TextAlign.center),
+
+            Text(
+              'Проектов пока нет',
+              style: AppTypography.h2,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: AppSizes.sm),
             Text(
               'Будь первым — создай проект\nи собери свою команду',
-              style: AppTypography.body
-                  .copyWith(color: AppColors.grey),
+              style: AppTypography.body.copyWith(color: AppColors.grey),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSizes.xl),
+
+            // CTA button
             SizedBox(
               width: double.infinity,
               height: AppSizes.buttonHeight,
@@ -264,6 +236,18 @@ class _EmptyFeed extends StatelessWidget {
                 onPressed: () => context.push('/project/create'),
                 icon: const Icon(Icons.add_rounded, size: 20),
                 label: const Text('Создать проект'),
+              ),
+            ),
+            const SizedBox(height: AppSizes.sm),
+
+            // Secondary action
+            SizedBox(
+              width: double.infinity,
+              height: AppSizes.buttonHeight,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/search'),
+                icon: const Icon(Icons.search_rounded, size: 20),
+                label: const Text('Поискать проекты'),
               ),
             ),
           ],
