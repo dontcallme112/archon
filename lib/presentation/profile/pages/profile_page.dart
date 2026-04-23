@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:student_app/domain/repositories/firestore_user_repository.dart';
+import 'package:student_app/domain/repositories/repositories.dart';
 import 'package:student_app/presentation/profile/pages/profile_bloc.dart';
+import 'package:student_app/presentation/profile/pages/profile_event.dart';
 import 'package:student_app/presentation/profile/pages/profile_state.dart';
 
 import '../../../domain/entities/entities.dart';
@@ -9,7 +12,6 @@ import '../../common/widgets/common_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_typography.dart';
-
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -38,26 +40,27 @@ class _ProfilePageState extends State<ProfilePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: BlocBuilder<ProfileBloc, ProfileState>(
-        builder: (context, state) {
-          if (state is ProfileLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: BlocProvider<ProfileBloc>(
+        create: (context) =>
+            ProfileBloc(userRepository: FirestoreUserRepository())
+              ..add(LoadProfileData()),
+        child: BlocBuilder<ProfileBloc, ProfileState>(
+          builder: (context, state) {
+            if (state is ProfileLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (state is ProfileError) {
-            return Center(child: Text(state.message));
-          }
+            if (state is ProfileError) {
+              return Center(child: Text(state.message));
+            }
 
-          if (state is ProfileLoaded) {
-            return _buildContent(
-              context,
-              state.user,
-              state.projects,
-            );
-          }
+            if (state is ProfileLoaded) {
+              return _buildContent(context, state.user, state.projects);
+            }
 
-          return const SizedBox();
-        },
+            return const SizedBox();
+          },
+        ),
       ),
     );
   }
@@ -127,11 +130,7 @@ class _ProfilePageState extends State<ProfilePage>
           /// AVATAR + INFO
           Row(
             children: [
-              AppAvatar(
-                name: user.name,
-                imageUrl: user.avatarUrl,
-                size: 72,
-              ),
+              AppAvatar(name: user.name, imageUrl: user.avatarUrl, size: 72),
               const SizedBox(width: AppSizes.md),
 
               Expanded(
@@ -163,12 +162,7 @@ class _ProfilePageState extends State<ProfilePage>
 
           /// STATS
           Row(
-            children: [
-              _StatBadge(
-                value: '$projectsCount',
-                label: 'Проектов',
-              ),
-            ],
+            children: [_StatBadge(value: '$projectsCount', label: 'Проектов')],
           ),
 
           const SizedBox(height: AppSizes.md),
@@ -177,9 +171,7 @@ class _ProfilePageState extends State<ProfilePage>
           Wrap(
             spacing: 6,
             runSpacing: 6,
-            children: user.skills
-                .map((s) => SkillChip(label: s))
-                .toList(),
+            children: user.skills.map((s) => SkillChip(label: s)).toList(),
           ),
 
           const SizedBox(height: AppSizes.md),
@@ -239,9 +231,7 @@ class _MyApplicationsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Нет заявок'),
-    );
+    return const Center(child: Text('Нет заявок'));
   }
 }
 
@@ -273,10 +263,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(context, shrinkOffset, overlapsContent) {
-    return Container(
-      color: AppColors.white,
-      child: tabBar,
-    );
+    return Container(color: AppColors.white, child: tabBar);
   }
 
   @override

@@ -91,11 +91,18 @@ class AppRouter {
 
       // ─── Full-screen routes ──────────────────────────────────
       GoRoute(
+        path: '/project/create',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CreateProjectPage(),
+      ),
+
+      GoRoute(
         path: '/project/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             ProjectPage(projectId: state.pathParameters['id']!),
       ),
+
       GoRoute(
         path: '/project/:id/apply',
         parentNavigatorKey: _rootNavigatorKey,
@@ -115,11 +122,6 @@ class AppRouter {
           projectId: state.pathParameters['id']!,
           applicationId: state.pathParameters['appId']!,
         ),
-      ),
-      GoRoute(
-        path: '/project/create',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const CreateProjectPage(),
       ),
       GoRoute(
         path: '/project/:id/edit',
