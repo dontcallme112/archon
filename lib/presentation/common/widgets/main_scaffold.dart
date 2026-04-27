@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
@@ -7,15 +6,14 @@ class MainScaffold extends StatelessWidget {
   final Widget child;
   const MainScaffold({super.key, required this.child});
 
-  int _selectedIndex(BuildContext context) {
+int _selectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith('/feed')) return 0;
-    if (location.startsWith('/search')) return 1;
+    // if (location.startsWith('/search')) return 1; // поиск убран
     if (location.startsWith('/notifications')) return 2;
     if (location.startsWith('/profile')) return 3;
     return 0;
   }
-
   @override
   Widget build(BuildContext context) {
     final index = _selectedIndex(context);
@@ -44,19 +42,13 @@ class MainScaffold extends StatelessWidget {
                   isSelected: index == 0,
                   onTap: () => context.go('/feed'),
                 ),
-                _NavItem(
-                  icon: Icons.search_rounded,
-                  label: 'Поиск',
-                  isSelected: index == 1,
-                  onTap: () => context.go('/search'),
-                ),
-                _AddButton(onTap: () {
-                  if (FirebaseAuth.instance.currentUser == null) {
-                    context.push('/register');
-                    return;
-                  }
-                  context.push('/project/create');
-                }),
+                // _NavItem(
+                //   icon: Icons.search_rounded,
+                //   label: 'Поиск',
+                //   isSelected: index == 1,
+                //   onTap: () => context.go('/search'),
+                // ),
+                _AddButton(onTap: () => context.push('/project/create')),
                 _NavItem(
                   icon: Icons.notifications_rounded,
                   label: 'Уведомления',

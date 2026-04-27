@@ -76,7 +76,7 @@ class FirestoreUserRepository implements UserRepository {
     if (_uid == null) return [];
     final snap = await _db
         .collection('projects')
-        .where('ownerId', isEqualTo: _uid)
+        .where('authorId', isEqualTo: _uid)
         .orderBy('createdAt', descending: true)
         .get();
     return snap.docs.map(_projectFromDoc).toList();

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:student_app/domain/repositories/firestore_user_repository.dart';
-import 'package:student_app/domain/repositories/repositories.dart';
+import 'package:student_app/presentation/common/widgets/project_card.dart';
 import 'package:student_app/presentation/profile/pages/profile_bloc.dart';
 import 'package:student_app/presentation/profile/pages/profile_event.dart';
 import 'package:student_app/presentation/profile/pages/profile_state.dart';
@@ -49,15 +49,12 @@ class _ProfilePageState extends State<ProfilePage>
             if (state is ProfileLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-
             if (state is ProfileError) {
               return Center(child: Text(state.message));
             }
-
             if (state is ProfileLoaded) {
               return _buildContent(context, state.user, state.projects);
             }
-
             return const SizedBox();
           },
         ),
@@ -96,7 +93,7 @@ class _ProfilePageState extends State<ProfilePage>
           controller: _tabController,
           children: [
             _MyProjectsTab(projects: projects),
-            const _MyApplicationsTab(), // пока пусто
+            const _MyApplicationsTab(),
           ],
         ),
       ),
@@ -113,7 +110,6 @@ class _ProfilePageState extends State<ProfilePage>
       padding: const EdgeInsets.all(AppSizes.md),
       child: Column(
         children: [
-          /// TOP BAR
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -124,64 +120,65 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             ],
           ),
-
           const SizedBox(height: AppSizes.md),
 
-          /// AVATAR + INFO
           Row(
             children: [
               AppAvatar(name: user.name, imageUrl: user.avatarUrl, size: 72),
               const SizedBox(width: AppSizes.md),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(user.name, style: AppTypography.h3),
-
-                    if (user.bio != null)
+                    if (user.bio != null && user.bio!.isNotEmpty)
                       Text(user.bio!, style: AppTypography.caption),
-
-                    if (user.portfolioUrl != null)
+                    if (user.portfolioUrl != null && user.portfolioUrl!.isNotEmpty)
                       Text(
                         user.portfolioUrl!,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.primary,
-                        ),
+                        style: AppTypography.caption
+                            .copyWith(color: AppColors.primary),
                       ),
-
-                    if (user.telegram != null)
+                    if (user.telegram != null && user.telegram!.isNotEmpty)
                       Text(user.telegram!, style: AppTypography.caption),
                   ],
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: AppSizes.md),
 
-          /// STATS
           Row(
-            children: [_StatBadge(value: '$projectsCount', label: 'Проектов')],
+            children: [
+              _StatBadge(value: '$projectsCount', label: 'Проектов'),
+            ],
           ),
-
           const SizedBox(height: AppSizes.md),
 
-          /// SKILLS
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: user.skills.map((s) => SkillChip(label: s)).toList(),
-          ),
-
+          if (user.skills.isNotEmpty)
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: user.skills.map((s) => SkillChip(label: s)).toList(),
+            ),
           const SizedBox(height: AppSizes.md),
 
-          /// EDIT BUTTON
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
               onPressed: () {},
               child: const Text('Редактировать профиль'),
+            ),
+          ),
+          const SizedBox(height: AppSizes.sm),
+
+          // ✅ Кнопка создать проект
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => context.push('/project/create'),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Создать проект'),
             ),
           ),
         ],
@@ -190,20 +187,34 @@ class _ProfilePageState extends State<ProfilePage>
   }
 }
 
-/// ─── PROJECTS TAB ─────────────────────────
+// ─── PROJECTS TAB ─────────────────────────────────────────────────────────
 
 class _MyProjectsTab extends StatelessWidget {
   final List<ProjectEntity> projects;
-
   const _MyProjectsTab({required this.projects});
 
   @override
   Widget build(BuildContext context) {
     if (projects.isEmpty) {
       return Center(
-        child: ElevatedButton(
-          onPressed: () => context.push('/project/create'),
-          child: const Text('Создать проект'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.folder_open_rounded,
+                size: 64, color: AppColors.lightGrey),
+            const SizedBox(height: AppSizes.md),
+            Text('Нет проектов',
+                style: AppTypography.h3.copyWith(color: AppColors.grey)),
+            const SizedBox(height: AppSizes.sm),
+            Text('Создай первый проект',
+                style: AppTypography.body.copyWith(color: AppColors.grey)),
+            const SizedBox(height: AppSizes.md),
+            ElevatedButton.icon(
+              onPressed: () => context.push('/project/create'),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Создать проект'),
+            ),
+          ],
         ),
       );
     }
@@ -211,36 +222,38 @@ class _MyProjectsTab extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.all(AppSizes.md),
       itemCount: projects.length,
-      itemBuilder: (context, i) {
-        final p = projects[i];
-
-        return ListTile(
-          title: Text(p.title),
-          subtitle: Text(p.shortDescription),
-          onTap: () => context.push('/project/${p.id}'),
-        );
-      },
+      // ✅ Используем ProjectCard как в ленте
+      itemBuilder: (context, i) => ProjectCard(project: projects[i]),
     );
   }
 }
 
-/// ─── APPLICATIONS TAB (пока пусто) ─────────
+// ─── APPLICATIONS TAB ─────────────────────────────────────────────────────
 
 class _MyApplicationsTab extends StatelessWidget {
   const _MyApplicationsTab();
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Нет заявок'));
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.send_rounded, size: 64, color: AppColors.lightGrey),
+          const SizedBox(height: AppSizes.md),
+          Text('Нет заявок',
+              style: AppTypography.h3.copyWith(color: AppColors.grey)),
+        ],
+      ),
+    );
   }
 }
 
-/// ─── STAT ─────────────────────────
+// ─── WIDGETS ──────────────────────────────────────────────────────────────
 
 class _StatBadge extends StatelessWidget {
   final String value;
   final String label;
-
   const _StatBadge({required this.value, required this.label});
 
   @override
@@ -254,17 +267,13 @@ class _StatBadge extends StatelessWidget {
   }
 }
 
-/// ─── TAB BAR ─────────────────────────
-
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
-
   const _TabBarDelegate(this.tabBar);
 
   @override
-  Widget build(context, shrinkOffset, overlapsContent) {
-    return Container(color: AppColors.white, child: tabBar);
-  }
+  Widget build(context, shrinkOffset, overlapsContent) =>
+      Container(color: AppColors.white, child: tabBar);
 
   @override
   double get maxExtent => tabBar.preferredSize.height;
