@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_typography.dart';
@@ -77,6 +78,7 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
+  final List<TextInputFormatter>? inputFormatters; // ← опциональный
 
   const AppTextField({
     super.key,
@@ -88,6 +90,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.prefixIcon,
     this.suffixIcon,
+    this.inputFormatters, // ← опциональный, без required
   });
 
   @override
@@ -104,6 +107,7 @@ class AppTextField extends StatelessWidget {
           maxLines: maxLines,
           keyboardType: keyboardType,
           validator: validator,
+          inputFormatters: inputFormatters, // ← передаём в TextFormField
           style: AppTypography.body,
           decoration: InputDecoration(
             hintText: hint,
@@ -172,7 +176,8 @@ class AppAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         color: AppColors.primaryLight,
         image: imageUrl != null
-            ? DecorationImage(image: NetworkImage(imageUrl!), fit: BoxFit.cover)
+            ? DecorationImage(
+                image: NetworkImage(imageUrl!), fit: BoxFit.cover)
             : null,
       ),
       child: imageUrl == null
@@ -250,7 +255,8 @@ class DeadlineBadge extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.calendar_today_rounded, size: 13, color: AppColors.grey),
+        const Icon(Icons.calendar_today_rounded,
+            size: 13, color: AppColors.grey),
         const SizedBox(width: 4),
         Text('Дедлайн: $deadline', style: AppTypography.caption),
       ],
@@ -298,10 +304,17 @@ class StatusBadge extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(color: textColor, shape: BoxShape.circle),
+            decoration:
+                BoxDecoration(color: textColor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 5),
-          Text(label, style: AppTypography.caption.copyWith(color: textColor, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

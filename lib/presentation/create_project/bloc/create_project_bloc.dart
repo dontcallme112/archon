@@ -21,6 +21,7 @@ class CreateProjectPublished extends CreateProjectEvent {
   final String deadline;
   final String format;
   final String level;
+  final String category;
 
   CreateProjectPublished({
     required this.title,
@@ -31,6 +32,7 @@ class CreateProjectPublished extends CreateProjectEvent {
     required this.deadline,
     required this.format,
     required this.level,
+    required this.category,
   });
 }
 
@@ -67,7 +69,8 @@ class CreateProjectState {
 
 // ─── BLoC ─────────────────────────────────────────────────────────────────
 
-class CreateProjectBloc extends Bloc<CreateProjectEvent, CreateProjectState> {
+class CreateProjectBloc
+    extends Bloc<CreateProjectEvent, CreateProjectState> {
   final CreateProjectUseCase _createProject;
 
   CreateProjectBloc({required CreateProjectUseCase createProject})
@@ -77,11 +80,17 @@ class CreateProjectBloc extends Bloc<CreateProjectEvent, CreateProjectState> {
     on<CreateProjectPublished>(_onPublished);
   }
 
-  void _onStepChanged(CreateProjectStepChanged event, Emitter<CreateProjectState> emit) {
+  void _onStepChanged(
+    CreateProjectStepChanged event,
+    Emitter<CreateProjectState> emit,
+  ) {
     emit(state.copyWith(currentStep: event.step));
   }
 
-  Future<void> _onPublished(CreateProjectPublished event, Emitter<CreateProjectState> emit) async {
+  Future<void> _onPublished(
+    CreateProjectPublished event,
+    Emitter<CreateProjectState> emit,
+  ) async {
     emit(state.copyWith(status: CreateProjectStatus.loading));
     final result = await _createProject(
       title: event.title,
@@ -92,6 +101,7 @@ class CreateProjectBloc extends Bloc<CreateProjectEvent, CreateProjectState> {
       deadline: event.deadline,
       format: event.format,
       level: event.level,
+      category: event.category,
     );
     result.fold(
       onSuccess: (project) => emit(state.copyWith(

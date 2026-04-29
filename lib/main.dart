@@ -11,8 +11,10 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
 import 'presentation/auth/bloc/auth_bloc.dart';
+import 'presentation/feed/bloc/feed_bloc.dart';
 import 'domain/repositories/repositories.dart';
 import 'domain/usecases/other_usecases.dart';
+import 'domain/usecases/project/project_usecases.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +51,11 @@ class ProjectHubApp extends StatelessWidget {
 
         // ───── UseCases ─────
         RepositoryProvider(
+          create: (context) => GetFeedProjectsUseCase(
+            context.read<ProjectRepository>(),
+          ),
+        ),
+        RepositoryProvider(
           create: (context) => SubmitApplicationUseCase(
             context.read<ApplicationRepository>(),
           ),
@@ -69,8 +76,17 @@ class ProjectHubApp extends StatelessWidget {
           ),
         ),
       ],
-      child: BlocProvider<AuthBloc>(
-        create: (_) => AuthBloc()..add(AuthCheckRequested()),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>(
+            create: (_) => AuthBloc()..add(AuthCheckRequested()),
+          ),
+          BlocProvider<FeedBloc>(
+            create: (context) => FeedBloc(
+              getFeedProjects: context.read<GetFeedProjectsUseCase>(),
+            ),
+          ),
+        ],
         child: MaterialApp.router(
           title: 'ProjectHub',
           debugShowCheckedModeBanner: false,

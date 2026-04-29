@@ -1,9 +1,8 @@
-
-// ─── Get Feed Projects ────────────────────────────────────────────────────
-
 import 'package:student_app/core/utils/result.dart';
 import 'package:student_app/domain/entities/entities.dart';
 import 'package:student_app/domain/repositories/repositories.dart';
+
+// ─── Get Feed Projects ────────────────────────────────────────────────────
 
 class GetFeedProjectsUseCase {
   final ProjectRepository _repo;
@@ -14,6 +13,8 @@ class GetFeedProjectsUseCase {
     String? format,
     String? level,
     String? query,
+    int offset = 0,  // ← добавь
+    int limit = 10,  // ← добавь
   }) async {
     try {
       final projects = await _repo.getFeedProjects(
@@ -21,6 +22,8 @@ class GetFeedProjectsUseCase {
         format: format,
         level: level,
         query: query,
+        offset: offset,  // ← добавь
+        limit: limit,    // ← добавь
       );
       return Success(projects);
     } catch (e) {
@@ -28,7 +31,6 @@ class GetFeedProjectsUseCase {
     }
   }
 }
-
 // ─── Get Project By Id ────────────────────────────────────────────────────
 
 class GetProjectByIdUseCase {
@@ -60,6 +62,7 @@ class CreateProjectUseCase {
     required String deadline,
     required String format,
     required String level,
+    required String category,
   }) async {
     if (title.trim().isEmpty) {
       return const Failure('Введите название проекта');
@@ -77,6 +80,7 @@ class CreateProjectUseCase {
         deadline: deadline,
         format: format,
         level: level,
+        category: category,
       );
       return Success(project);
     } catch (e) {

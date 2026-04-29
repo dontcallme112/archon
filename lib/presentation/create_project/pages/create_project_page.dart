@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:student_app/core/reference/app_reference_data.dart';
 import '../bloc/create_project_bloc.dart';
 import '../../../domain/usecases/project/project_usecases.dart';
 import '../../../domain/repositories/firestore_project_repository.dart';
@@ -8,6 +10,8 @@ import '../../common/widgets/common_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_typography.dart';
+
+const int _kShortDescLimit = 120;
 
 class CreateProjectPage extends StatelessWidget {
   const CreateProjectPage({super.key});
@@ -38,25 +42,19 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
   final _shortDescController = TextEditingController();
   final _fullDescController = TextEditingController();
 
-  final Set<String> _selectedSkills = {};
+  final Set<String> _selectedSkillIds = {};
   int _slots = 3;
   DateTime? _deadline;
-  String _format = 'Онлайн';
-  String _level = 'junior';
-
-  final _availableSkills = [
-    'Figma', 'UI/UX', 'Sketch', 'Flutter',
-    'React', 'Node.js', 'Python', 'iOS',
-    'Android', 'Marketing', 'SMM', 'ML/AI',
-  ];
-  final _formats = ['Онлайн', 'Оффлайн'];
-  final _levels = ['junior', 'middle', 'senior'];
+  String _formatId = 'online';   // id из справочника
+  String _levelId = 'junior';    // id из справочника
+  String _categoryId = 'dev';    // id из справочника
 
   bool get _step1Valid =>
       _titleController.text.trim().isNotEmpty &&
       _shortDescController.text.trim().isNotEmpty;
 
-  bool get _step2Valid => _selectedSkills.isNotEmpty && _deadline != null;
+  bool get _step2Valid =>
+      _selectedSkillIds.isNotEmpty && _deadline != null;
 
   @override
   void initState() {
@@ -106,7 +104,7 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
             body: SafeArea(
               child: Column(
                 children: [
-                  // Header
+                  // ── Header ──
                   Container(
                     color: AppColors.white,
                     padding: const EdgeInsets.symmetric(
@@ -114,7 +112,8 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+                          icon: const Icon(Icons.arrow_back_ios_rounded,
+                              size: 20),
                           onPressed: () {
                             if (_step > 0) {
                               setState(() => _step--);
@@ -124,7 +123,8 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                           },
                         ),
                         Expanded(
-                          child: Text('Новый проект', style: AppTypography.h3),
+                          child:
+                              Text('Новый проект', style: AppTypography.h3),
                         ),
                         if (_autosaved)
                           Row(
@@ -143,7 +143,7 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                     ),
                   ),
 
-                  // Step indicator
+                  // ── Step indicator ──
                   Container(
                     color: AppColors.white,
                     padding: const EdgeInsets.fromLTRB(
@@ -160,7 +160,8 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                           children: [0, 1].map((i) {
                             return Expanded(
                               child: Container(
-                                margin: EdgeInsets.only(right: i == 0 ? 6 : 0),
+                                margin:
+                                    EdgeInsets.only(right: i == 0 ? 6 : 0),
                                 height: 4,
                                 decoration: BoxDecoration(
                                   color: i <= _step
@@ -177,7 +178,7 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                     ),
                   ),
 
-                  // Form
+                  // ── Form ──
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(AppSizes.md),
@@ -192,34 +193,34 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                               )
                             : _Step2(
                                 key: const ValueKey(1),
-                                availableSkills: _availableSkills,
-                                selectedSkills: _selectedSkills,
-                                formats: _formats,
-                                levels: _levels,
+                                selectedSkillIds: _selectedSkillIds,
                                 slots: _slots,
-                                format: _format,
-                                level: _level,
+                                formatId: _formatId,
+                                levelId: _levelId,
+                                categoryId: _categoryId,
                                 deadline: _deadline,
-                                onSkillToggle: (s) => setState(() {
-                                  _selectedSkills.contains(s)
-                                      ? _selectedSkills.remove(s)
-                                      : _selectedSkills.add(s);
+                                onSkillToggle: (id) => setState(() {
+                                  _selectedSkillIds.contains(id)
+                                      ? _selectedSkillIds.remove(id)
+                                      : _selectedSkillIds.add(id);
                                 }),
                                 onSlotsDecrement: () => setState(
                                     () => _slots = (_slots - 1).clamp(1, 50)),
                                 onSlotsIncrement: () =>
                                     setState(() => _slots++),
                                 onFormatChanged: (v) =>
-                                    setState(() => _format = v),
+                                    setState(() => _formatId = v),
                                 onLevelChanged: (v) =>
-                                    setState(() => _level = v),
+                                    setState(() => _levelId = v),
+                                onCategoryChanged: (v) =>
+                                    setState(() => _categoryId = v),
                                 onDeadlineTap: _pickDeadline,
                               ),
                       ),
                     ),
                   ),
 
-                  // Button
+                  // ── Button ──
                   Container(
                     padding: EdgeInsets.fromLTRB(
                       AppSizes.md,
@@ -237,12 +238,15 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                       ],
                     ),
                     child: PrimaryButton(
-                      label: _step == 0 ? 'Далее' : 'Опубликовать проект',
+                      label:
+                          _step == 0 ? 'Далее' : 'Опубликовать проект',
                       icon: _step == 0
                           ? Icons.arrow_forward_rounded
                           : Icons.rocket_launch_rounded,
                       isLoading: isLoading,
-                      onTap: _step == 0 ? _nextStep : () => _publish(context),
+                      onTap: _step == 0
+                          ? _nextStep
+                          : () => _publish(context),
                     ),
                   ),
                 ],
@@ -283,17 +287,31 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
     }
 
     final d = _deadline!;
-    // ✅ Отправляем событие в BLoC — он сохраняет в Firestore
+
+    // Конвертируем id → Firestore значения
+    final fsFormat   = AppFormats.toFirestore(_formatId) ?? _formatId;
+    final fsLevel    = AppLevels.toFirestore(_levelId) ?? _levelId;
+    final fsCategory = AppCategories.toFirestore(_categoryId) ?? _categoryId;
+
+    // Получаем label навыков из id
+    final skillLabels = _selectedSkillIds
+        .map((id) => AppSkills.all
+            .firstWhere((s) => s.id == id,
+                orElse: () => SkillItem(id: id, label: id, categoryId: ''))
+            .label)
+        .toList();
+
     context.read<CreateProjectBloc>().add(
           CreateProjectPublished(
             title: _titleController.text.trim(),
             shortDescription: _shortDescController.text.trim(),
             fullDescription: _fullDescController.text.trim(),
-            skills: _selectedSkills.toList(),
+            skills: skillLabels,
             slots: _slots,
             deadline: '${d.day}.${d.month}.${d.year}',
-            format: _format,
-            level: _level,
+            format: fsFormat,
+            level: fsLevel,
+            category: fsCategory,
           ),
         );
   }
@@ -306,7 +324,8 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.primary),
+          colorScheme:
+              const ColorScheme.light(primary: AppColors.primary),
         ),
         child: child!,
       ),
@@ -362,7 +381,7 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
 
 // ─── Step 1 ───────────────────────────────────────────────────────────────
 
-class _Step1 extends StatelessWidget {
+class _Step1 extends StatefulWidget {
   final TextEditingController titleController;
   final TextEditingController shortDescController;
   final TextEditingController fullDescController;
@@ -375,32 +394,87 @@ class _Step1 extends StatelessWidget {
   });
 
   @override
+  State<_Step1> createState() => _Step1State();
+}
+
+class _Step1State extends State<_Step1> {
+  int _shortDescLength = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _shortDescLength = widget.shortDescController.text.length;
+    widget.shortDescController.addListener(_onShortDescChanged);
+  }
+
+  void _onShortDescChanged() {
+    setState(() => _shortDescLength = widget.shortDescController.text.length);
+  }
+
+  @override
+  void dispose() {
+    widget.shortDescController.removeListener(_onShortDescChanged);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isOverLimit = _shortDescLength > _kShortDescLimit;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppTextField(
           hint: 'Название проекта',
           label: 'Название проекта',
-          controller: titleController,
+          controller: widget.titleController,
           validator: (v) =>
               v == null || v.isEmpty ? 'Обязательное поле' : null,
         ),
         const SizedBox(height: AppSizes.md),
-        AppTextField(
-          hint: 'Короткое описание (превью для карточки)',
-          label: 'Короткое описание',
-          controller: shortDescController,
-          maxLines: 3,
+
+        // Краткое описание с лимитом
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppTextField(
+              hint: 'Короткое описание (превью для карточки)',
+              label: 'Краткое описание',
+              controller: widget.shortDescController,
+              maxLines: 3,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(_kShortDescLimit),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Отображается на карточке проекта',
+                  style: AppTypography.caption.copyWith(color: AppColors.grey),
+                ),
+                Text(
+                  '$_shortDescLength/$_kShortDescLimit',
+                  style: AppTypography.caption.copyWith(
+                    color: isOverLimit ? AppColors.error : AppColors.grey,
+                    fontWeight: isOverLimit ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         const SizedBox(height: AppSizes.md),
+
         AppTextField(
           hint: 'Подробно опиши цели, задачи и ожидаемый результат',
           label: 'Полное описание',
-          controller: fullDescController,
+          controller: widget.fullDescController,
           maxLines: 6,
         ),
         const SizedBox(height: AppSizes.md),
+
         Container(
           padding: const EdgeInsets.all(AppSizes.sm + 4),
           decoration: BoxDecoration(
@@ -416,8 +490,8 @@ class _Step1 extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Хорошее описание повышает шансы найти команду. Расскажи о целях и стеке.',
-                  style:
-                      AppTypography.body.copyWith(color: AppColors.primaryDark),
+                  style: AppTypography.body
+                      .copyWith(color: AppColors.primaryDark),
                 ),
               ),
             ],
@@ -430,69 +504,143 @@ class _Step1 extends StatelessWidget {
 
 // ─── Step 2 ───────────────────────────────────────────────────────────────
 
-class _Step2 extends StatelessWidget {
-  final List<String> availableSkills;
-  final Set<String> selectedSkills;
-  final List<String> formats;
-  final List<String> levels;
+class _Step2 extends StatefulWidget {
+  final Set<String> selectedSkillIds;
   final int slots;
-  final String format;
-  final String level;
+  final String formatId;
+  final String levelId;
+  final String categoryId;
   final DateTime? deadline;
   final void Function(String) onSkillToggle;
   final VoidCallback onSlotsDecrement;
   final VoidCallback onSlotsIncrement;
   final void Function(String) onFormatChanged;
   final void Function(String) onLevelChanged;
+  final void Function(String) onCategoryChanged;
   final VoidCallback onDeadlineTap;
 
   const _Step2({
     super.key,
-    required this.availableSkills,
-    required this.selectedSkills,
-    required this.formats,
-    required this.levels,
+    required this.selectedSkillIds,
     required this.slots,
-    required this.format,
-    required this.level,
+    required this.formatId,
+    required this.levelId,
+    required this.categoryId,
     required this.deadline,
     required this.onSkillToggle,
     required this.onSlotsDecrement,
     required this.onSlotsIncrement,
     required this.onFormatChanged,
     required this.onLevelChanged,
+    required this.onCategoryChanged,
     required this.onDeadlineTap,
   });
 
   @override
+  State<_Step2> createState() => _Step2State();
+}
+
+class _Step2State extends State<_Step2> {
+  late String _activeCategoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeCategoryId = AppCategories.all.first.id;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final skills = AppSkills.byCategory(_activeCategoryId);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ── Навыки ──
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Навыки (кого ищешь)', style: AppTypography.label),
-            if (selectedSkills.isNotEmpty)
-              Text('${selectedSkills.length} выбрано',
-                  style:
-                      AppTypography.caption.copyWith(color: AppColors.primary)),
+            if (widget.selectedSkillIds.isNotEmpty)
+              Text(
+                '${widget.selectedSkillIds.length} выбрано',
+                style: AppTypography.caption
+                    .copyWith(color: AppColors.primary),
+              ),
           ],
         ),
         const SizedBox(height: AppSizes.xs),
+
+        // Категории навыков — горизонтальный скролл
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: AppCategories.all.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (_, i) {
+              final cat = AppCategories.all[i];
+              final isActive = cat.id == _activeCategoryId;
+              return GestureDetector(
+                onTap: () => setState(() => _activeCategoryId = cat.id),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.primary
+                        : AppColors.background,
+                    borderRadius:
+                        BorderRadius.circular(AppSizes.radiusFull),
+                    border: Border.all(
+                      color: isActive
+                          ? AppColors.primary
+                          : AppColors.lightGrey,
+                    ),
+                  ),
+                  child: Text(
+                    cat.label,
+                    style: AppTypography.caption.copyWith(
+                      color: isActive ? Colors.white : AppColors.dark,
+                      fontWeight: isActive
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: AppSizes.sm),
+
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: availableSkills
+          children: skills
               .map((s) => SkillChip(
-                    label: s,
-                    isSelected: selectedSkills.contains(s),
-                    onTap: () => onSkillToggle(s),
+                    label: s.label,
+                    isSelected: widget.selectedSkillIds.contains(s.id),
+                    onTap: () => widget.onSkillToggle(s.id),
                   ))
               .toList(),
         ),
         const SizedBox(height: AppSizes.md),
 
+        // ── Категория проекта ──
+        Text('Категория проекта', style: AppTypography.label),
+        const SizedBox(height: AppSizes.xs),
+        _ReferenceDropdown<CategoryItem>(
+          value: widget.categoryId,
+          items: AppCategories.all,
+          getId: (c) => c.id,
+          getLabel: (c) => c.label,
+          onChanged: widget.onCategoryChanged,
+        ),
+        const SizedBox(height: AppSizes.md),
+
+        // ── Кол-во людей ──
         Text('Кол-во людей', style: AppTypography.label),
         const SizedBox(height: AppSizes.xs),
         Container(
@@ -504,19 +652,19 @@ class _Step2 extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                onPressed: onSlotsDecrement,
+                onPressed: widget.onSlotsDecrement,
                 icon: const Icon(Icons.remove_rounded),
                 color: AppColors.primary,
               ),
               Expanded(
                 child: Text(
-                  '$slots ${_plural(slots)}',
+                  '${widget.slots} ${_plural(widget.slots)}',
                   textAlign: TextAlign.center,
                   style: AppTypography.h3,
                 ),
               ),
               IconButton(
-                onPressed: onSlotsIncrement,
+                onPressed: widget.onSlotsIncrement,
                 icon: const Icon(Icons.add_rounded),
                 color: AppColors.primary,
               ),
@@ -525,10 +673,11 @@ class _Step2 extends StatelessWidget {
         ),
         const SizedBox(height: AppSizes.md),
 
+        // ── Дедлайн ──
         Text('Дедлайн', style: AppTypography.label),
         const SizedBox(height: AppSizes.xs),
         GestureDetector(
-          onTap: onDeadlineTap,
+          onTap: widget.onDeadlineTap,
           child: Container(
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.md, vertical: 14),
@@ -536,27 +685,33 @@ class _Step2 extends StatelessWidget {
               color: AppColors.primarySurface,
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
               border: Border.all(
-                color: deadline != null ? AppColors.primary : AppColors.lightGrey,
+                color: widget.deadline != null
+                    ? AppColors.primary
+                    : AppColors.lightGrey,
               ),
             ),
             child: Row(
               children: [
                 Icon(Icons.calendar_today_rounded,
                     size: 18,
-                    color: deadline != null ? AppColors.primary : AppColors.grey),
+                    color: widget.deadline != null
+                        ? AppColors.primary
+                        : AppColors.grey),
                 const SizedBox(width: AppSizes.sm),
                 Text(
-                  deadline != null
-                      ? '${deadline!.day}.${deadline!.month}.${deadline!.year}'
+                  widget.deadline != null
+                      ? '${widget.deadline!.day}.${widget.deadline!.month}.${widget.deadline!.year}'
                       : 'Выбрать дату',
                   style: AppTypography.body.copyWith(
-                    color: deadline != null ? AppColors.primary : AppColors.grey,
-                    fontWeight: deadline != null
+                    color: widget.deadline != null
+                        ? AppColors.primary
+                        : AppColors.grey,
+                    fontWeight: widget.deadline != null
                         ? FontWeight.w600
                         : FontWeight.w400,
                   ),
                 ),
-                if (deadline != null) ...[
+                if (widget.deadline != null) ...[
                   const Spacer(),
                   const Icon(Icons.check_circle_rounded,
                       size: 16, color: AppColors.success),
@@ -567,29 +722,41 @@ class _Step2 extends StatelessWidget {
         ),
         const SizedBox(height: AppSizes.md),
 
+        // ── Формат + Уровень ──
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _DropdownBlock(
-                label: 'Формат',
-                value: format,
-                items: formats,
-                onChanged: onFormatChanged,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Формат', style: AppTypography.label),
+                  const SizedBox(height: AppSizes.xs),
+                  _ReferenceDropdown<ReferenceItem>(
+                    value: widget.formatId,
+                    items: AppFormats.all,
+                    getId: (f) => f.id,
+                    getLabel: (f) => f.label,
+                    onChanged: widget.onFormatChanged,
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: AppSizes.sm),
             Expanded(
-              child: _DropdownBlock(
-                label: 'Уровень',
-                value: level,
-                items: levels,
-                displayMap: {
-                  'junior': 'Junior',
-                  'middle': 'Middle',
-                  'senior': 'Senior',
-                },
-                onChanged: onLevelChanged,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Уровень', style: AppTypography.label),
+                  const SizedBox(height: AppSizes.xs),
+                  _ReferenceDropdown<ReferenceItem>(
+                    value: widget.levelId,
+                    items: AppLevels.all,
+                    getId: (l) => l.id,
+                    getLabel: (l) => l.label,
+                    onChanged: widget.onLevelChanged,
+                  ),
+                ],
               ),
             ),
           ],
@@ -605,53 +772,45 @@ class _Step2 extends StatelessWidget {
   }
 }
 
-class _DropdownBlock extends StatelessWidget {
-  final String label;
-  final String value;
-  final List<String> items;
-  final void Function(String) onChanged;
-  final Map<String, String>? displayMap;
+// ─── Универсальный дропдаун из справочника ────────────────────────────────
 
-  const _DropdownBlock({
-    required this.label,
+class _ReferenceDropdown<T> extends StatelessWidget {
+  final String value;
+  final List<T> items;
+  final String Function(T) getId;
+  final String Function(T) getLabel;
+  final void Function(String) onChanged;
+
+  const _ReferenceDropdown({
     required this.value,
     required this.items,
+    required this.getId,
+    required this.getLabel,
     required this.onChanged,
-    this.displayMap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: AppTypography.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis),
-        const SizedBox(height: AppSizes.xs),
-        DropdownButtonFormField<String>(
-          value: value,
-          isExpanded: true,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: AppColors.primarySurface,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          items: items
-              .map((i) => DropdownMenuItem(
-                    value: i,
-                    child: Text(displayMap?[i] ?? i, style: AppTypography.body),
-                  ))
-              .toList(),
-          onChanged: (v) => onChanged(v!),
+    return DropdownButtonFormField<String>(
+      value: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: AppColors.primarySurface,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          borderSide: BorderSide.none,
         ),
-      ],
+      ),
+      items: items
+          .map((item) => DropdownMenuItem(
+                value: getId(item),
+                child: Text(getLabel(item), style: AppTypography.body),
+              ))
+          .toList(),
+      onChanged: (v) => onChanged(v!),
     );
   }
 }

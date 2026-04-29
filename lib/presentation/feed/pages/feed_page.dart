@@ -1,306 +1,441 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:student_app/core/reference/app_reference_data.dart';
 import 'package:student_app/presentation/common/widgets/project_card.dart';
-import '../../../domain/entities/entities.dart';
+import 'package:student_app/presentation/feed/bloc/feed_bloc.dart';
 import '../../common/widgets/common_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_typography.dart';
 
-// ─── Категории ────────────────────────────────────────────────────────────
-
-const List<Map<String, dynamic>> kProjectCategories = [
-  {'label': 'Все',        'value': null},
-  {'label': 'Дизайн',     'value': 'Дизайн'},
-  {'label': 'Разработка', 'value': 'Разработка'},
-  {'label': 'Маркетинг',  'value': 'Маркетинг'},
-  {'label': 'Аналитика',  'value': 'Аналитика'},
-  {'label': 'Менеджмент', 'value': 'Менеджмент'},
-  {'label': 'Другое',     'value': 'Другое'},
-];
-
-// ─── FeedPage ─────────────────────────────────────────────────────────────
-
-class FeedPage extends StatefulWidget {
+class FeedPage extends StatelessWidget {
   const FeedPage({super.key});
 
   @override
-  State<FeedPage> createState() => _FeedPageState();
+  Widget build(BuildContext context) {
+    context.read<FeedBloc>().add(FeedLoadRequested());
+    return const _FeedView();
+  }
 }
 
-class _FeedPageState extends State<FeedPage> {
-  String? _selectedCategory; // null = все
-  String _activeFormat = 'Все';
-
-  final _formats = ['Все', 'Онлайн', 'Оффлайн'];
-
-  // ✅ Firestore стрим с фильтрами
-  Stream<List<ProjectEntity>> get _projectsStream {
-    Query q = FirebaseFirestore.instance
-        .collection('projects')
-        .where('isActive', isEqualTo: true)
-        .orderBy('createdAt', descending: true);
-
-    if (_selectedCategory != null) {
-      q = q.where('category', isEqualTo: _selectedCategory);
-    }
-    if (_activeFormat != 'Все') {
-      q = q.where('format', isEqualTo: _activeFormat);
-    }
-
-    return q.snapshots().map((snap) => snap.docs.map((doc) {
-          final d = doc.data() as Map<String, dynamic>;
-          return ProjectEntity(
-            id: doc.id,
-            title: d['title'] ?? '',
-            shortDescription: d['shortDescription'] ?? '',
-            fullDescription: d['fullDescription'] ?? '',
-            requiredSkills: List<String>.from(
-                d['requiredSkills'] ?? d['skills'] ?? []),
-            deadline: d['deadline'] ?? '',
-            format: d['format'] ?? 'Онлайн',
-            level: d['level'] ?? 'junior',
-            totalSlots: d['totalSlots'] ?? 0,
-            filledSlots: d['filledSlots'] ?? 0,
-            author: UserEntity(
-              id: d['authorId'] ?? '',
-              name: d['authorName'] ?? '',
-              avatarUrl: d['authorAvatar'],
-              skills: [],
-              level: 'junior',
-            ),
-            teamMembers: [],
-            category: d['category'] ?? 'Разработка',
-            isActive: d['isActive'] ?? true,
-            createdAt:
-                (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-          );
-        }).toList());
-  }
-
-  bool get _hasActiveFilters =>
-      _selectedCategory != null || _activeFormat != 'Все';
-
-  void _showFilterSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Заголовок
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Фильтры', style: AppTypography.h3),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                  // Формат
-                  Text('Формат', style: AppTypography.label),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _formats.map((fmt) {
-                      final isSelected = _activeFormat == fmt;
-                      return ChoiceChip(
-                        label: Text(fmt),
-                        selected: isSelected,
-                        onSelected: (_) {
-                          setSheetState(() {});
-                          setState(() => _activeFormat = fmt);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  // Категория
-                  Text('Категория', style: AppTypography.label),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: kProjectCategories.map((cat) {
-                      final isSelected = _selectedCategory == cat['value'];
-                      return ChoiceChip(
-                        label: Text(cat['label'] as String),
-                        selected: isSelected,
-                        onSelected: (_) {
-                          setSheetState(() {});
-                          setState(() =>
-                              _selectedCategory = cat['value'] as String?);
-                          Navigator.pop(ctx);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+class _FeedView extends StatelessWidget {
+  const _FeedView();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      // ─── AppBar ──────────────────────────────────────────────
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        title: Text('ProjectHub', style: AppTypography.h2),
-        actions: [
-          // Кнопка фильтров с индикатором
-          IconButton(
-            tooltip: 'Фильтры',
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.tune_rounded, color: AppColors.dark),
-                if (_hasActiveFilters)
-                  Positioned(
-                    top: -2,
-                    right: -2,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
+      appBar: _buildAppBar(context),
+      body: const _FeedBody(),
+    );
+  }
+
+  AppBar _buildAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: AppColors.white,
+      automaticallyImplyLeading: false,
+      elevation: 0,
+      title: Text('ProjectHub', style: AppTypography.h2),
+      actions: [
+        BlocBuilder<FeedBloc, FeedState>(
+          buildWhen: (prev, curr) =>
+              prev.hasActiveFilters != curr.hasActiveFilters,
+          builder: (context, state) {
+            return IconButton(
+              tooltip: 'Фильтры',
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.tune_rounded, color: AppColors.dark),
+                  if (state.hasActiveFilters)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            onPressed: _showFilterSheet,
-          ),
-          // Кнопка профиля
-          IconButton(
-            tooltip: 'Профиль',
-            icon: const Icon(Icons.person_rounded, color: AppColors.dark),
-            onPressed: () => context.push('/profile'),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-
-      // ─── Body ────────────────────────────────────────────────
-      body: StreamBuilder<List<ProjectEntity>>(
-        stream: _projectsStream,
-        builder: (context, snapshot) {
-          // Загрузка
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // Ошибка
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSizes.md),
-                child: Text(
-                  'Ошибка: ${snapshot.error}',
-                  style: AppTypography.body.copyWith(color: AppColors.error),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            );
-          }
-
-          final projects = snapshot.data ?? [];
-
-          // Активные фильтры-чипы
-          final activeFiltersRow = _hasActiveFilters
-              ? Padding(
-                  padding: const EdgeInsets.only(bottom: AppSizes.sm),
-                  child: Wrap(
-                    spacing: 8,
-                    children: [
-                      if (_selectedCategory != null)
-                        Chip(
-                          label: Text(_selectedCategory!),
-                          deleteIcon: const Icon(Icons.close, size: 16),
-                          onDeleted: () =>
-                              setState(() => _selectedCategory = null),
-                        ),
-                      if (_activeFormat != 'Все')
-                        Chip(
-                          label: Text(_activeFormat),
-                          deleteIcon: const Icon(Icons.close, size: 16),
-                          onDeleted: () =>
-                              setState(() => _activeFormat = 'Все'),
-                        ),
-                    ],
-                  ),
-                )
-              : const SizedBox.shrink();
-
-          // Пусто
-          if (projects.isEmpty) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSizes.md),
-              child: Column(
-                children: [
-                  const _HeroSection(),
-                  const SizedBox(height: AppSizes.md),
-                  activeFiltersRow,
-                  const SizedBox(height: AppSizes.xl),
-                  _EmptyState(onCreateTap: () => context.push('/project/create')),
                 ],
               ),
+              onPressed: () => _showFilterSheet(context),
             );
-          }
+          },
+        ),
+        const SizedBox(width: 4),
+      ],
+    );
+  }
 
-          // ✅ Список проектов
-          return RefreshIndicator(
-            onRefresh: () async => setState(() {}),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(AppSizes.md),
-              // +1 для Hero+фильтры в первом элементе
-              itemCount: projects.length + 1,
-              itemBuilder: (context, i) {
-                if (i == 0) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _HeroSection(),
-                      const SizedBox(height: AppSizes.md),
-                      activeFiltersRow,
-                    ],
-                  );
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSizes.md),
-                  child: ProjectCard(project: projects[i - 1]),
-                );
-              },
-            ),
-          );
-        },
+  void _showFilterSheet(BuildContext context) {
+    final bloc = context.read<FeedBloc>();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => BlocProvider.value(
+        value: bloc,
+        child: const _FilterSheet(),
       ),
     );
   }
 }
 
-// ─── Hero секция ──────────────────────────────────────────────────────────
+// ─── Body ─────────────────────────────────────────────────────────────────
+
+class _FeedBody extends StatelessWidget {
+  const _FeedBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<FeedBloc, FeedState>(
+      builder: (context, state) {
+        if (state.status == FeedStatus.loading && state.projects.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state.status == FeedStatus.error && state.projects.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSizes.md),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    state.errorMessage ?? 'Что-то пошло не так',
+                    style:
+                        AppTypography.body.copyWith(color: AppColors.error),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSizes.md),
+                  ElevatedButton(
+                    onPressed: () =>
+                        context.read<FeedBloc>().add(FeedRefreshRequested()),
+                    child: const Text('Повторить'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final projects = state.projects;
+
+        if (projects.isEmpty && state.status == FeedStatus.loaded) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSizes.md),
+            child: Column(
+              children: [
+                const _HeroSection(),
+                const SizedBox(height: AppSizes.md),
+                _ActiveFiltersRow(state: state),
+                const SizedBox(height: AppSizes.xl),
+                _EmptyState(
+                  onCreateTap: () => context.push('/project/create'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async =>
+              context.read<FeedBloc>().add(FeedRefreshRequested()),
+          child: ListView.builder(
+            padding: const EdgeInsets.all(AppSizes.md),
+            // +1 для Hero, +1 для кнопки «Загрузить ещё»
+            itemCount: projects.length + 2,
+            itemBuilder: (context, i) {
+              // Hero + активные фильтры
+              if (i == 0) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _HeroSection(),
+                    const SizedBox(height: AppSizes.md),
+                    _ActiveFiltersRow(state: state),
+                  ],
+                );
+              }
+
+              // Карточки проектов
+              if (i <= projects.length) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSizes.md),
+                  child: ProjectCard(project: projects[i - 1]),
+                );
+              }
+
+              // Кнопка «Загрузить ещё» / индикатор / конец списка
+              return _LoadMoreButton(state: state);
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─── Кнопка «Загрузить ещё» ───────────────────────────────────────────────
+
+class _LoadMoreButton extends StatelessWidget {
+  final FeedState state;
+  const _LoadMoreButton({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.status == FeedStatus.loadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!state.hasMore) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
+        child: Center(
+          child: Text(
+            'Все проекты загружены',
+            style: AppTypography.caption.copyWith(color: AppColors.grey),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.lg, top: AppSizes.sm),
+      child: Center(
+        child: OutlinedButton.icon(
+          onPressed: () =>
+              context.read<FeedBloc>().add(FeedLoadMoreRequested()),
+          icon: const Icon(Icons.expand_more_rounded, size: 18),
+          label: const Text('Загрузить ещё'),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Активные фильтры-чипы ────────────────────────────────────────────────
+
+class _ActiveFiltersRow extends StatelessWidget {
+  final FeedState state;
+  const _ActiveFiltersRow({required this.state});
+
+  String _categoryLabel(String id) =>
+      AppCategories.all.firstWhere((c) => c.id == id,
+          orElse: () => CategoryItem(
+              id: id, label: id, firestoreValue: id, icon: '', order: 0)).label;
+
+  String _formatLabel(String id) =>
+      AppFormats.all.firstWhere((f) => f.id == id,
+          orElse: () =>
+              ReferenceItem(id: id, label: id, firestoreValue: id, order: 0)).label;
+
+  String _levelLabel(String id) =>
+      AppLevels.all.firstWhere((l) => l.id == id,
+          orElse: () =>
+              ReferenceItem(id: id, label: id, firestoreValue: id, order: 0)).label;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!state.hasActiveFilters) return const SizedBox.shrink();
+
+    final bloc = context.read<FeedBloc>();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          if (state.activeCategory != null)
+            Chip(
+              label: Text(_categoryLabel(state.activeCategory!)),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () => bloc.add(FeedCategoryChanged(null)),
+            ),
+          if (state.activeFormat != null)
+            Chip(
+              label: Text(_formatLabel(state.activeFormat!)),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () => bloc.add(FeedFormatChanged(null)),
+            ),
+          if (state.activeLevel != null)
+            Chip(
+              label: Text(_levelLabel(state.activeLevel!)),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () => bloc.add(FeedLevelChanged(null)),
+            ),
+          ActionChip(
+            label: const Text(
+              'Сбросить всё',
+              style: TextStyle(fontSize: 13, color: AppColors.dark),
+            ),
+            backgroundColor: AppColors.background,
+            side: const BorderSide(color: AppColors.grey, width: 1),
+            onPressed: () => bloc.add(FeedFiltersCleared()),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Filter bottom sheet ───────────────────────────────────────────────────
+
+class _FilterSheet extends StatelessWidget {
+  const _FilterSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<FeedBloc, FeedState>(
+      builder: (context, state) {
+        final bloc = context.read<FeedBloc>();
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20, 16, 20,
+            20 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Фильтры', style: AppTypography.h3),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                Text('Формат', style: AppTypography.label),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _FilterChip(
+                      label: 'Все',
+                      selected: state.activeFormat == null,
+                      onTap: () => bloc.add(FeedFormatChanged(null)),
+                    ),
+                    ...AppFormats.all.map((fmt) => _FilterChip(
+                          label: fmt.label,
+                          selected: state.activeFormat == fmt.id,
+                          onTap: () => bloc.add(FeedFormatChanged(fmt.id)),
+                        )),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                Text('Уровень', style: AppTypography.label),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _FilterChip(
+                      label: 'Все',
+                      selected: state.activeLevel == null,
+                      onTap: () => bloc.add(FeedLevelChanged(null)),
+                    ),
+                    ...AppLevels.all.map((lvl) => _FilterChip(
+                          label: lvl.label,
+                          selected: state.activeLevel == lvl.id,
+                          onTap: () => bloc.add(FeedLevelChanged(lvl.id)),
+                        )),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                Text('Категория', style: AppTypography.label),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _FilterChip(
+                      label: 'Все',
+                      selected: state.activeCategory == null,
+                      onTap: () => bloc.add(FeedCategoryChanged(null)),
+                    ),
+                    ...AppCategories.all.map((cat) => _FilterChip(
+                          label: cat.label,
+                          selected: state.activeCategory == cat.id,
+                          onTap: () => bloc.add(FeedCategoryChanged(cat.id)),
+                        )),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                if (state.hasActiveFilters)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        bloc.add(FeedFiltersCleared());
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Сбросить все фильтры'),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          color: selected ? Colors.white : AppColors.dark,
+        ),
+      ),
+      selected: selected,
+      selectedColor: AppColors.primary,
+      backgroundColor: AppColors.background,
+      side: BorderSide(
+        color: selected ? AppColors.primary : AppColors.grey,
+        width: 1,
+      ),
+      onSelected: (_) => onTap(),
+    );
+  }
+}
+
+// ─── Hero ─────────────────────────────────────────────────────────────────
 
 class _HeroSection extends StatelessWidget {
   const _HeroSection();

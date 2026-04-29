@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:student_app/core/reference/app_reference_data.dart';
 import '../../common/widgets/common_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -13,19 +14,16 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  int _step = 0; // 0, 1, 2
+  int _step = 0;
   final Set<String> _selectedSkills = {};
   String _selectedLevel = 'junior';
   final _portfolioController = TextEditingController();
 
-  final _availableSkills = [
-    'Figma', 'Sketch', 'UI/UX', 'Prototyping',
-    'Flutter', 'React', 'Node.js', 'Python',
-    'Marketing', 'SMM', 'Copywriting', 'Analytics',
-    'iOS', 'Android', 'DevOps', 'ML/AI',
-  ];
-
-  final _levels = ['junior', 'middle', 'senior'];
+  @override
+  void dispose() {
+    _portfolioController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,28 +35,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppSizes.lg),
-              // Header
               Text(
                 'Добро пожаловать!\nДавайте настроим ваш профиль.',
                 style: AppTypography.h2,
               ),
               const SizedBox(height: AppSizes.sm),
-              Text(
-                'Шаг ${_step + 1}/3',
-                style: AppTypography.caption,
-              ),
+              Text('Шаг ${_step + 1}/3', style: AppTypography.caption),
               const SizedBox(height: AppSizes.lg),
-
-              // Step indicator
               _StepIndicator(currentStep: _step),
               const SizedBox(height: AppSizes.lg),
-
               Expanded(child: _buildStep()),
-
               const SizedBox(height: AppSizes.md),
               PrimaryButton(
                 label: _step < 2 ? 'Продолжить' : 'Начать',
-                icon: _step < 2 ? Icons.arrow_forward_rounded : Icons.rocket_launch_rounded,
+                icon: _step < 2
+                    ? Icons.arrow_forward_rounded
+                    : Icons.rocket_launch_rounded,
                 onTap: _next,
               ),
               const SizedBox(height: AppSizes.sm),
@@ -73,15 +65,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
     switch (_step) {
       case 0:
         return _SkillsStep(
-          available: _availableSkills,
           selected: _selectedSkills,
           onToggle: (s) => setState(() {
-            _selectedSkills.contains(s) ? _selectedSkills.remove(s) : _selectedSkills.add(s);
+            _selectedSkills.contains(s)
+                ? _selectedSkills.remove(s)
+                : _selectedSkills.add(s);
           }),
         );
       case 1:
         return _LevelStep(
-          levels: _levels,
           selected: _selectedLevel,
           onSelect: (l) => setState(() => _selectedLevel = l),
         );
@@ -100,6 +92,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 }
+
+// ─── Step indicator ───────────────────────────────────────────────────────
 
 class _StepIndicator extends StatelessWidget {
   final int currentStep;
@@ -125,110 +119,185 @@ class _StepIndicator extends StatelessWidget {
   }
 }
 
-class _SkillsStep extends StatelessWidget {
-  final List<String> available;
+// ─── Step 1: Навыки ───────────────────────────────────────────────────────
+
+class _SkillsStep extends StatefulWidget {
   final Set<String> selected;
   final void Function(String) onToggle;
 
-  const _SkillsStep({
-    required this.available,
-    required this.selected,
-    required this.onToggle,
-  });
+  const _SkillsStep({required this.selected, required this.onToggle});
 
   @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Выбери навыки', style: AppTypography.h3),
-          const SizedBox(height: AppSizes.sm),
-          Text(
-            'Выбери то, что умеешь или хочешь развивать',
-            style: AppTypography.body.copyWith(color: AppColors.grey),
-          ),
-          const SizedBox(height: AppSizes.md),
-          Wrap(
-            spacing: AppSizes.sm,
-            runSpacing: AppSizes.sm,
-            children: available
-                .map((s) => SkillChip(
-                      label: s,
-                      isSelected: selected.contains(s),
-                      onTap: () => onToggle(s),
-                    ))
-                .toList(),
-          ),
-        ],
-      ),
-    );
-  }
+  State<_SkillsStep> createState() => _SkillsStepState();
 }
 
-class _LevelStep extends StatelessWidget {
-  final List<String> levels;
-  final String selected;
-  final void Function(String) onSelect;
-
-  const _LevelStep({required this.levels, required this.selected, required this.onSelect});
+class _SkillsStepState extends State<_SkillsStep> {
+  // Активная категория — по умолчанию первая
+  String _activeCategoryId = AppCategories.all.first.id;
 
   @override
   Widget build(BuildContext context) {
-    final labels = {'junior': 'Junior', 'middle': 'Middle', 'senior': 'Senior'};
-    final descriptions = {
-      'junior': 'Только начинаю, ищу опыт',
-      'middle': 'Есть опыт, готов к реальным задачам',
-      'senior': 'Опытный, могу вести проект',
-    };
+    final skills = AppSkills.byCategory(_activeCategoryId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Твой уровень', style: AppTypography.h3),
-        const SizedBox(height: AppSizes.sm),
-        Text('Это поможет найти подходящие проекты', style: AppTypography.body.copyWith(color: AppColors.grey)),
+        Text('Выбери навыки', style: AppTypography.h3),
+        const SizedBox(height: AppSizes.xs),
+        Text(
+          'Выбери то, что умеешь или хочешь развивать',
+          style: AppTypography.body.copyWith(color: AppColors.grey),
+        ),
         const SizedBox(height: AppSizes.md),
-        ...levels.map((l) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-              child: GestureDetector(
-                onTap: () => onSelect(l),
+
+        // Категории — горизонтальный скролл
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: AppCategories.all.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (_, i) {
+              final cat = AppCategories.all[i];
+              final isActive = cat.id == _activeCategoryId;
+              return GestureDetector(
+                onTap: () => setState(() => _activeCategoryId = cat.id),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(AppSizes.md),
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: selected == l ? AppColors.primary.withOpacity(0.08) : AppColors.white,
-                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                    color: isActive ? AppColors.primary : AppColors.background,
+                    borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                     border: Border.all(
-                      color: selected == l ? AppColors.primary : AppColors.lightGrey,
-                      width: selected == l ? 2 : 1,
+                      color: isActive ? AppColors.primary : AppColors.lightGrey,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Radio<String>(
-                        value: l,
-                        groupValue: selected,
-                        onChanged: (v) => onSelect(v!),
-                        activeColor: AppColors.primary,
-                      ),
-                      const SizedBox(width: AppSizes.sm),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(labels[l]!, style: AppTypography.h4),
-                          Text(descriptions[l]!, style: AppTypography.caption),
-                        ],
-                      ),
-                    ],
+                  child: Text(
+                    cat.label,
+                    style: AppTypography.caption.copyWith(
+                      color: isActive ? Colors.white : AppColors.dark,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                    ),
                   ),
                 ),
-              ),
-            )),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: AppSizes.md),
+
+        // Навыки выбранной категории
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.selected.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                    child: Text(
+                      'Выбрано: ${widget.selected.length}',
+                      style: AppTypography.caption
+                          .copyWith(color: AppColors.primary),
+                    ),
+                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: skills
+                      .map((s) => SkillChip(
+                            label: s.label,
+                            isSelected: widget.selected.contains(s.id),
+                            onTap: () => widget.onToggle(s.id),
+                          ))
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
 }
+
+// ─── Step 2: Уровень ──────────────────────────────────────────────────────
+
+class _LevelStep extends StatelessWidget {
+  final String selected;
+  final void Function(String) onSelect;
+
+  const _LevelStep({required this.selected, required this.onSelect});
+
+  static const _descriptions = {
+    'intern': 'Только начинаю, ищу первый опыт',
+    'junior': 'Есть базовые знания, ищу практику',
+    'middle': 'Есть опыт, готов к реальным задачам',
+    'senior': 'Опытный, могу вести проект',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Твой уровень', style: AppTypography.h3),
+        const SizedBox(height: AppSizes.xs),
+        Text(
+          'Это поможет найти подходящие проекты',
+          style: AppTypography.body.copyWith(color: AppColors.grey),
+        ),
+        const SizedBox(height: AppSizes.md),
+        ...AppLevels.all.map((lvl) {
+          final isSelected = selected == lvl.id;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            child: GestureDetector(
+              onTap: () => onSelect(lvl.id),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(AppSizes.md),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary.withOpacity(0.08)
+                      : AppColors.white,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : AppColors.lightGrey,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Radio<String>(
+                      value: lvl.id,
+                      groupValue: selected,
+                      onChanged: (v) => onSelect(v!),
+                      activeColor: AppColors.primary,
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(lvl.label, style: AppTypography.h4),
+                        Text(
+                          _descriptions[lvl.id] ?? '',
+                          style: AppTypography.caption,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+// ─── Step 3: Портфолио ────────────────────────────────────────────────────
 
 class _PortfolioStep extends StatelessWidget {
   final TextEditingController controller;
@@ -240,7 +309,7 @@ class _PortfolioStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Добавь портфолио', style: AppTypography.h3),
-        const SizedBox(height: AppSizes.sm),
+        const SizedBox(height: AppSizes.xs),
         Text(
           'Это необязательно, но повысит шансы быть принятым в проект',
           style: AppTypography.body.copyWith(color: AppColors.grey),
@@ -262,12 +331,14 @@ class _PortfolioStep extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
+              const Icon(Icons.info_outline_rounded,
+                  color: AppColors.primary, size: 20),
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(
                   'Можно добавить позже в профиле',
-                  style: AppTypography.body.copyWith(color: AppColors.primaryDark),
+                  style:
+                      AppTypography.body.copyWith(color: AppColors.primaryDark),
                 ),
               ),
             ],

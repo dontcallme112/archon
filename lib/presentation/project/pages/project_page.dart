@@ -19,7 +19,6 @@ class ProjectPage extends StatelessWidget {
     return BlocProvider(
       create: (_) => ProjectBloc(
         getProject: GetProjectByIdUseCase(FirestoreProjectRepository()),
-        toggleFavorite: ToggleFavoriteUseCase(FirestoreProjectRepository()),
       )..add(ProjectLoadRequested(projectId)),
       child: const _ProjectPageView(),
     );
@@ -45,10 +44,13 @@ class _ProjectPageView extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                  const Icon(Icons.error_outline,
+                      size: 48, color: AppColors.error),
                   const SizedBox(height: AppSizes.md),
-                  Text(state.errorMessage ?? 'Проект не найден',
-                      style: AppTypography.body),
+                  Text(
+                    state.errorMessage ?? 'Проект не найден',
+                    style: AppTypography.body,
+                  ),
                   const SizedBox(height: AppSizes.md),
                   ElevatedButton(
                     onPressed: () => context.pop(),
@@ -60,8 +62,7 @@ class _ProjectPageView extends StatelessWidget {
           );
         }
 
-        final project = state.project!;
-        return _ProjectContent(project: project, isSaved: state.isSaved);
+        return _ProjectContent(project: state.project!);
       },
     );
   }
@@ -69,8 +70,7 @@ class _ProjectPageView extends StatelessWidget {
 
 class _ProjectContent extends StatelessWidget {
   final ProjectEntity project;
-  final bool isSaved;
-  const _ProjectContent({required this.project, required this.isSaved});
+  const _ProjectContent({required this.project});
 
   @override
   Widget build(BuildContext context) {
@@ -85,16 +85,6 @@ class _ProjectContent extends StatelessWidget {
               icon: const Icon(Icons.arrow_back_ios_rounded),
               onPressed: () => context.pop(),
             ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                  color: isSaved ? AppColors.primary : AppColors.dark,
-                ),
-                onPressed: () =>
-                    context.read<ProjectBloc>().add(ProjectSaveToggled()),
-              ),
-            ],
           ),
 
           SliverToBoxAdapter(
@@ -111,17 +101,12 @@ class _ProjectContent extends StatelessWidget {
 
                   Text(
                     project.fullDescription,
-                    style: AppTypography.body.copyWith(color: AppColors.darkGrey),
+                    style:
+                        AppTypography.body.copyWith(color: AppColors.darkGrey),
                   ),
                   const SizedBox(height: AppSizes.lg),
 
                   _InfoCard(children: [
-                    _InfoRow(
-                      icon: Icons.psychology_rounded,
-                      label: 'Навыки',
-                      value: project.requiredSkills.join(', '),
-                    ),
-                    const Divider(),
                     _InfoRow(
                       icon: Icons.calendar_today_rounded,
                       label: 'Дедлайн',
@@ -163,7 +148,8 @@ class _ProjectContent extends StatelessWidget {
                   if (project.teamMembers.isNotEmpty) ...[
                     SectionHeader(title: 'Команда'),
                     const SizedBox(height: AppSizes.sm),
-                    ...project.teamMembers.map((m) => _TeamMemberTile(user: m)),
+                    ...project.teamMembers
+                        .map((m) => _TeamMemberTile(user: m)),
                     const SizedBox(height: AppSizes.md),
                   ],
 
@@ -177,7 +163,8 @@ class _ProjectContent extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Автор', style: AppTypography.caption),
-                              Text(project.author.name, style: AppTypography.h4),
+                              Text(project.author.name,
+                                  style: AppTypography.h4),
                             ],
                           ),
                           const Spacer(),
@@ -211,12 +198,12 @@ class _ProjectContent extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           boxShadow: [
-            BoxShadow(color: AppColors.dark.withOpacity(0.08), blurRadius: 16)
+            BoxShadow(
+                color: AppColors.dark.withOpacity(0.08), blurRadius: 16),
           ],
         ),
         child: ElevatedButton.icon(
-          onPressed: () =>
-              context.push('/project/${project.id}/apply'),
+          onPressed: () => context.push('/project/${project.id}/apply'),
           icon: const Icon(Icons.send_rounded, size: 18),
           label: const Text('Откликнуться'),
         ),
@@ -239,7 +226,8 @@ class _InfoCard extends StatelessWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         boxShadow: [
-          BoxShadow(color: AppColors.dark.withOpacity(0.04), blurRadius: 8)
+          BoxShadow(
+              color: AppColors.dark.withOpacity(0.04), blurRadius: 8),
         ],
       ),
       child: Column(children: children),

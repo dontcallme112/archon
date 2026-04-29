@@ -4,14 +4,23 @@ abstract class FeedEvent {}
 
 class FeedLoadRequested extends FeedEvent {}
 
+class FeedRefreshRequested extends FeedEvent {}
+
+class FeedLoadMoreRequested extends FeedEvent {}
+
 class FeedCategoryChanged extends FeedEvent {
-  final String category;
+  final String? category;
   FeedCategoryChanged(this.category);
 }
 
 class FeedFormatChanged extends FeedEvent {
-  final String format;
+  final String? format;
   FeedFormatChanged(this.format);
+}
+
+class FeedLevelChanged extends FeedEvent {
+  final String? level;
+  FeedLevelChanged(this.level);
 }
 
 class FeedSearchChanged extends FeedEvent {
@@ -19,9 +28,4 @@ class FeedSearchChanged extends FeedEvent {
   FeedSearchChanged(this.query);
 }
 
-class FeedFavoriteToggled extends FeedEvent {
-  final String projectId;
-  FeedFavoriteToggled(this.projectId);
-}
-
-class FeedRefreshRequested extends FeedEvent {}
+class FeedFiltersCleared extends FeedEvent {}

@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:student_app/domain/repositories/firestore_user_repository.dart';
 import 'package:student_app/presentation/common/widgets/project_card.dart';
-import 'package:student_app/presentation/profile/pages/profile_bloc.dart';
-import 'package:student_app/presentation/profile/pages/profile_event.dart';
-import 'package:student_app/presentation/profile/pages/profile_state.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:student_app/presentation/profile/bloc/profile_bloc.dart';
+import 'package:student_app/presentation/profile/bloc/profile_event.dart';
+import 'package:student_app/presentation/profile/bloc/profile_state.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../common/widgets/common_widgets.dart';
@@ -165,16 +167,6 @@ class _ProfilePageState extends State<ProfilePage>
 
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {},
-              child: const Text('Редактировать профиль'),
-            ),
-          ),
-          const SizedBox(height: AppSizes.sm),
-
-          // ✅ Кнопка создать проект
-          SizedBox(
-            width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () => context.push('/project/create'),
               icon: const Icon(Icons.add_rounded, size: 18),
@@ -235,16 +227,92 @@ class _MyApplicationsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.send_rounded, size: 64, color: AppColors.lightGrey),
-          const SizedBox(height: AppSizes.md),
-          Text('Нет заявок',
-              style: AppTypography.h3.copyWith(color: AppColors.grey)),
-        ],
-      ),
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Center(child: Text('Не авторизован'));
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('applications')
+          .where('applicantId', isEqualTo: user.uid)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snap.hasData || snap.data!.docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.send_rounded,
+                  size: 64,
+                  color: AppColors.lightGrey,
+                ),
+                const SizedBox(height: AppSizes.md),
+                Text(
+                  'У вас пока нет заявок',
+                  style: AppTypography.h3.copyWith(color: AppColors.grey),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final docs = snap.data!.docs;
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(AppSizes.md),
+          itemCount: docs.length,
+          itemBuilder: (context, i) {
+            final data = docs[i].data() as Map<String, dynamic>;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: AppSizes.md),
+              padding: const EdgeInsets.all(AppSizes.md),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.dark.withOpacity(0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data['projectTitle'] ?? 'Проект',
+                    style: AppTypography.h3,
+                  ),
+                  const SizedBox(height: AppSizes.xs),
+                  Text(
+                    'Статус: ${data['status']}',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+                  Text(
+                    data['motivation'] ?? '',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.body,
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

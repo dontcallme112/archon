@@ -4,50 +4,78 @@ import 'package:student_app/core/utils/result.dart';
 import 'package:student_app/domain/usecases/project/project_usecases.dart';
 import '../../../domain/entities/entities.dart';
 
-
 part 'feed_event.dart';
 part 'feed_state.dart';
 
+const int _kPageSize = 10;
+
 class FeedBloc extends Bloc<FeedEvent, FeedState> {
   final GetFeedProjectsUseCase _getFeedProjects;
-  final ToggleFavoriteUseCase _toggleFavorite;
-
   Timer? _searchDebounce;
 
   FeedBloc({
     required GetFeedProjectsUseCase getFeedProjects,
-    required ToggleFavoriteUseCase toggleFavorite,
   })  : _getFeedProjects = getFeedProjects,
-        _toggleFavorite = toggleFavorite,
         super(const FeedState()) {
     on<FeedLoadRequested>(_onLoad);
     on<FeedRefreshRequested>(_onRefresh);
+    on<FeedLoadMoreRequested>(_onLoadMore);
     on<FeedCategoryChanged>(_onCategoryChanged);
     on<FeedFormatChanged>(_onFormatChanged);
+    on<FeedLevelChanged>(_onLevelChanged);
     on<FeedSearchChanged>(_onSearchChanged);
-    on<FeedFavoriteToggled>(_onFavoriteToggled);
+    on<FeedFiltersCleared>(_onFiltersCleared);
   }
 
   Future<void> _onLoad(FeedLoadRequested event, Emitter<FeedState> emit) async {
     emit(state.copyWith(status: FeedStatus.loading));
-    await _loadProjects(emit);
+    await _loadProjects(emit, reset: true);
   }
 
-  Future<void> _onRefresh(FeedRefreshRequested event, Emitter<FeedState> emit) async {
-    await _loadProjects(emit);
+  Future<void> _onRefresh(
+      FeedRefreshRequested event, Emitter<FeedState> emit) async {
+    await _loadProjects(emit, reset: true);
   }
 
-  Future<void> _onCategoryChanged(FeedCategoryChanged event, Emitter<FeedState> emit) async {
-    emit(state.copyWith(activeCategory: event.category, status: FeedStatus.loading));
-    await _loadProjects(emit);
+  Future<void> _onLoadMore(
+      FeedLoadMoreRequested event, Emitter<FeedState> emit) async {
+    if (!state.hasMore || state.status == FeedStatus.loadingMore) return;
+    emit(state.copyWith(status: FeedStatus.loadingMore));
+    await _loadProjects(emit, reset: false);
   }
 
-  Future<void> _onFormatChanged(FeedFormatChanged event, Emitter<FeedState> emit) async {
-    emit(state.copyWith(activeFormat: event.format, status: FeedStatus.loading));
-    await _loadProjects(emit);
+  Future<void> _onCategoryChanged(
+      FeedCategoryChanged event, Emitter<FeedState> emit) async {
+    emit(state.copyWith(
+      activeCategory: event.category,
+      clearCategory: event.category == null,
+      status: FeedStatus.loading,
+    ));
+    await _loadProjects(emit, reset: true);
   }
 
-  Future<void> _onSearchChanged(FeedSearchChanged event, Emitter<FeedState> emit) async {
+  Future<void> _onFormatChanged(
+      FeedFormatChanged event, Emitter<FeedState> emit) async {
+    emit(state.copyWith(
+      activeFormat: event.format,
+      clearFormat: event.format == null,
+      status: FeedStatus.loading,
+    ));
+    await _loadProjects(emit, reset: true);
+  }
+
+  Future<void> _onLevelChanged(
+      FeedLevelChanged event, Emitter<FeedState> emit) async {
+    emit(state.copyWith(
+      activeLevel: event.level,
+      clearLevel: event.level == null,
+      status: FeedStatus.loading,
+    ));
+    await _loadProjects(emit, reset: true);
+  }
+
+  Future<void> _onSearchChanged(
+      FeedSearchChanged event, Emitter<FeedState> emit) async {
     emit(state.copyWith(searchQuery: event.query));
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
@@ -55,30 +83,43 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
     });
   }
 
-  Future<void> _onFavoriteToggled(FeedFavoriteToggled event, Emitter<FeedState> emit) async {
-    final ids = Set<String>.from(state.favoriteIds);
-    // Optimistic update
-    if (ids.contains(event.projectId)) {
-      ids.remove(event.projectId);
-    } else {
-      ids.add(event.projectId);
-    }
-    emit(state.copyWith(favoriteIds: ids));
-    // Fire and forget — revert on error if needed
-    await _toggleFavorite(event.projectId);
+  Future<void> _onFiltersCleared(
+      FeedFiltersCleared event, Emitter<FeedState> emit) async {
+    emit(state.copyWith(
+      clearCategory: true,
+      clearFormat: true,
+      clearLevel: true,
+      searchQuery: '',
+      status: FeedStatus.loading,
+    ));
+    await _loadProjects(emit, reset: true);
   }
 
-  Future<void> _loadProjects(Emitter<FeedState> emit) async {
+  Future<void> _loadProjects(Emitter<FeedState> emit,
+      {required bool reset}) async {
+    // При reset начинаем с нуля, при loadMore — берём уже загруженные
+    final offset = reset ? 0 : state.projects.length;
+
     final result = await _getFeedProjects(
-      category: state.activeCategory == 'Все' ? null : state.activeCategory,
-      format: state.activeFormat == 'Все' ? null : state.activeFormat,
+      category: state.activeCategory,
+      format: state.activeFormat,
+      level: state.activeLevel,
       query: state.searchQuery.isEmpty ? null : state.searchQuery,
+      offset: offset,
+      limit: _kPageSize,
     );
+
     result.fold(
-      onSuccess: (projects) => emit(state.copyWith(
-        status: FeedStatus.loaded,
-        projects: projects,
-      )),
+      onSuccess: (newProjects) {
+        final allProjects = reset
+            ? newProjects
+            : [...state.projects, ...newProjects];
+        emit(state.copyWith(
+          status: FeedStatus.loaded,
+          projects: allProjects,
+          hasMore: newProjects.length == _kPageSize,
+        ));
+      },
       onFailure: (msg) => emit(state.copyWith(
         status: FeedStatus.error,
         errorMessage: msg,

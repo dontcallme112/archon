@@ -6,6 +6,8 @@ abstract class ProjectRepository {
     String? format,
     String? level,
     String? query,
+    int offset = 0,  // ← дефолтные значения
+    int limit = 10,
   });
 
   Future<ProjectEntity> getProjectById(String id);
@@ -19,6 +21,7 @@ abstract class ProjectRepository {
     required String deadline,
     required String format,
     required String level,
+    required String category,
   });
 
   Future<ProjectEntity> updateProject(String id, Map<String, dynamic> data);

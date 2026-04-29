@@ -23,7 +23,8 @@ class ProjectCard extends StatefulWidget {
   State<ProjectCard> createState() => _ProjectCardState();
 }
 
-class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStateMixin {
+class _ProjectCardState extends State<ProjectCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnim;
 
@@ -60,104 +61,97 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
         onTapCancel: () => _controller.forward(),
         child: Container(
           margin: const EdgeInsets.only(bottom: AppSizes.md),
+          padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary.withOpacity(0.8),
+                AppColors.primary.withOpacity(0.3),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.dark.withOpacity(0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top accent bar
-              Container(
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSizes.radiusLg)),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(AppSizes.radiusLg - 2),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.dark.withOpacity(0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(AppSizes.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title + favorite
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(project.title, style: AppTypography.h3, maxLines: 2),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppSizes.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Text(project.title, style: AppTypography.h3, maxLines: 2),
+                      const SizedBox(height: AppSizes.xs),
+                      Text(
+                        project.shortDescription,
+                        style: AppTypography.body.copyWith(
+                          color: AppColors.darkGrey,
                         ),
-                        GestureDetector(
-                          onTap: widget.onFavorite,
-                          child: Icon(
-                            widget.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            color: widget.isFavorite ? AppColors.error : AppColors.grey,
-                            size: 22,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSizes.xs),
-                    Text(
-                      project.shortDescription,
-                      style: AppTypography.body.copyWith(color: AppColors.darkGrey),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSizes.md),
-
-                    // Skills
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: project.requiredSkills
-                          .take(4)
-                          .map((s) => SkillChip(label: s))
-                          .toList(),
-                    ),
-                    const SizedBox(height: AppSizes.md),
-
-                    // Footer: team + deadline + apply
-                    Row(
-                      children: [
-                        // Team avatars
-                        _TeamAvatars(members: project.teamMembers),
-                        const SizedBox(width: AppSizes.sm),
-                        Text(
-                          '${project.filledSlots}/${project.totalSlots} мест свободно',
-                          style: AppTypography.caption,
-                        ),
-                        const Spacer(),
-                        DeadlineBadge(deadline: project.deadline),
-                      ],
-                    ),
-                    const SizedBox(height: AppSizes.md),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          if (FirebaseAuth.instance.currentUser == null) {
-                            context.push('/register');
-                            return;
-                          }
-                          context.push('/project/${project.id}/apply');
-                        },
-                        icon: const Icon(Icons.send_rounded, size: 16),
-                        label: const Text('Откликнуться'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: AppSizes.md),
+
+                      // Skills
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: project.requiredSkills
+                            .take(4)
+                            .map((s) => SkillChip(label: s))
+                            .toList(),
+                      ),
+                      const SizedBox(height: AppSizes.md),
+
+                      // Footer: team + deadline + apply
+                      Row(
+                        children: [
+                          // Team avatars
+                          _TeamAvatars(members: project.teamMembers),
+                          const SizedBox(width: AppSizes.sm),
+                          Text(
+                            '${project.filledSlots}/${project.totalSlots} мест свободно',
+                            style: AppTypography.caption,
+                          ),
+                          const Spacer(),
+                          DeadlineBadge(deadline: project.deadline),
+                        ],
+                      ),
+                      const SizedBox(height: AppSizes.md),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            if (FirebaseAuth.instance.currentUser == null) {
+                              context.push('/register');
+                              return;
+                            }
+                            context.push('/project/${project.id}/apply');
+                          },
+                          icon: const Icon(Icons.send_rounded, size: 16),
+                          label: const Text('Откликнуться'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

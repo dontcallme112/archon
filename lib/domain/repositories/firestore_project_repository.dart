@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/repositories.dart';
+import '../../core/reference/app_reference_data.dart';
 
 class FirestoreProjectRepository implements ProjectRepository {
   final _db = FirebaseFirestore.instance;
@@ -15,18 +16,49 @@ class FirestoreProjectRepository implements ProjectRepository {
     String? format,
     String? level,
     String? query,
+    int offset = 0,
+    int limit = 10,
   }) async {
+    final fsCategory = AppCategories.toFirestore(category);
+    final fsFormat   = AppFormats.toFirestore(format);
+    final fsLevel    = AppLevels.toFirestore(level);
+
+    final hasFilters = fsCategory != null || fsFormat != null || fsLevel != null;
+
     Query q = _db
         .collection('projects')
-        .where('isActive', isEqualTo: true)
-        .orderBy('createdAt', descending: true);
+        .where('isActive', isEqualTo: true);
 
-    if (category != null) q = q.where('category', isEqualTo: category);
-    if (format != null)   q = q.where('format', isEqualTo: format);
-    if (level != null)    q = q.where('level', isEqualTo: level);
+    // orderBy только без фильтров — иначе Firestore требует составной индекс
+    if (!hasFilters) {
+      q = q.orderBy('createdAt', descending: true);
+    }
+
+    if (fsCategory != null) q = q.where('category', isEqualTo: fsCategory);
+    if (fsFormat   != null) q = q.where('format',   isEqualTo: fsFormat);
+    if (fsLevel    != null) q = q.where('level',    isEqualTo: fsLevel);
 
     final snap = await q.get();
-    return snap.docs.map(_fromDoc).toList();
+    var projects = snap.docs.map(_fromDoc).toList();
+
+    // Сортируем вручную при фильтрации
+    if (hasFilters) {
+      projects.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+
+    // Поиск по тексту (client-side)
+    if (query != null && query.isNotEmpty) {
+      final lq = query.toLowerCase();
+      projects = projects
+          .where((p) =>
+              p.title.toLowerCase().contains(lq) ||
+              p.shortDescription.toLowerCase().contains(lq))
+          .toList();
+    }
+
+    // Пагинация (client-side)
+    if (offset >= projects.length) return [];
+    return projects.skip(offset).take(limit).toList();
   }
 
   @override
@@ -45,6 +77,7 @@ class FirestoreProjectRepository implements ProjectRepository {
     required String deadline,
     required String format,
     required String level,
+    required String category,
   }) async {
     final user = _auth.currentUser!;
     final ref = await _db.collection('projects').add({
@@ -57,10 +90,10 @@ class FirestoreProjectRepository implements ProjectRepository {
       'deadline': deadline,
       'format': format,
       'level': level,
+      'category': category,
       'authorId': user.uid,
       'authorName': user.displayName ?? '',
       'authorAvatar': user.photoURL,
-      'category': 'Разработка',
       'isActive': true,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -118,7 +151,7 @@ class FirestoreProjectRepository implements ProjectRepository {
   }) async {
     Query q = _db.collection('projects').where('isActive', isEqualTo: true);
     if (format != null) q = q.where('format', isEqualTo: format);
-    if (level != null)  q = q.where('level', isEqualTo: level);
+    if (level  != null) q = q.where('level',  isEqualTo: level);
     final snap = await q.get();
     return snap.docs.map(_fromDoc).toList();
   }
@@ -146,8 +179,7 @@ class FirestoreProjectRepository implements ProjectRepository {
       teamMembers: [],
       category: d['category'] ?? 'Разработка',
       isActive: d['isActive'] ?? true,
-      createdAt:
-          (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 }
