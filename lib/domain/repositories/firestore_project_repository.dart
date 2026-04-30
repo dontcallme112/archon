@@ -12,51 +12,70 @@ class FirestoreProjectRepository implements ProjectRepository {
 
   @override
   Future<List<ProjectEntity>> getFeedProjects({
-    String? category,
+    List<String>? skills,
     String? format,
     String? level,
     String? query,
     int offset = 0,
     int limit = 10,
   }) async {
-    final fsCategory = AppCategories.toFirestore(category);
-    final fsFormat   = AppFormats.toFirestore(format);
-    final fsLevel    = AppLevels.toFirestore(level);
+    final fsFormat = AppFormats.toFirestore(format);
+    final fsLevel = AppLevels.toFirestore(level);
 
-    final hasFilters = fsCategory != null || fsFormat != null || fsLevel != null;
+    final hasFirestoreFilters = fsFormat != null || fsLevel != null;
 
-    Query q = _db
-        .collection('projects')
-        .where('isActive', isEqualTo: true);
+    Query q = _db.collection('projects').where('isActive', isEqualTo: true);
 
-    // orderBy только без фильтров — иначе Firestore требует составной индекс
-    if (!hasFilters) {
+    // orderBy только без фильтров — иначе нужен составной индекс
+    if (!hasFirestoreFilters) {
       q = q.orderBy('createdAt', descending: true);
     }
 
-    if (fsCategory != null) q = q.where('category', isEqualTo: fsCategory);
-    if (fsFormat   != null) q = q.where('format',   isEqualTo: fsFormat);
-    if (fsLevel    != null) q = q.where('level',    isEqualTo: fsLevel);
+    if (fsFormat != null) q = q.where('format', isEqualTo: fsFormat);
+    if (fsLevel != null) q = q.where('level', isEqualTo: fsLevel);
 
     final snap = await q.get();
     var projects = snap.docs.map(_fromDoc).toList();
 
     // Сортируем вручную при фильтрации
-    if (hasFilters) {
+    if (hasFirestoreFilters) {
       projects.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
 
-    // Поиск по тексту (client-side)
+    // Фильтр по навыкам — client-side
+    // Навыки в Firestore хранятся как label ('Flutter', 'React', ...)
+    // Конвертируем id → label для сравнения
+    if (skills != null && skills.isNotEmpty) {
+      final skillLabels = skills
+          .map(
+            (id) => AppSkills.all
+                .firstWhere(
+                  (s) => s.id == id,
+                  orElse: () => SkillItem(id: id, label: id, categoryId: ''),
+                )
+                .label,
+          )
+          .toSet();
+
+      projects = projects.where((p) {
+        // Проект подходит если хотя бы один из выбранных навыков совпадает
+        return p.requiredSkills.any((s) => skillLabels.contains(s));
+      }).toList();
+    }
+
+    // Поиск по тексту
     if (query != null && query.isNotEmpty) {
       final lq = query.toLowerCase();
       projects = projects
-          .where((p) =>
-              p.title.toLowerCase().contains(lq) ||
-              p.shortDescription.toLowerCase().contains(lq))
+          .where(
+            (p) =>
+                p.title.toLowerCase().contains(lq) ||
+                p.shortDescription.toLowerCase().contains(lq),
+          )
           .toList();
     }
 
-    // Пагинация (client-side)
+    // Пагинация
     if (offset >= projects.length) return [];
     return projects.skip(offset).take(limit).toList();
   }
@@ -102,7 +121,9 @@ class FirestoreProjectRepository implements ProjectRepository {
 
   @override
   Future<ProjectEntity> updateProject(
-      String id, Map<String, dynamic> data) async {
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     await _db.collection('projects').doc(id).update({
       ...data,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -151,7 +172,7 @@ class FirestoreProjectRepository implements ProjectRepository {
   }) async {
     Query q = _db.collection('projects').where('isActive', isEqualTo: true);
     if (format != null) q = q.where('format', isEqualTo: format);
-    if (level  != null) q = q.where('level',  isEqualTo: level);
+    if (level != null) q = q.where('level', isEqualTo: level);
     final snap = await q.get();
     return snap.docs.map(_fromDoc).toList();
   }

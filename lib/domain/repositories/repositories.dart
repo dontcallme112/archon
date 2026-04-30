@@ -2,11 +2,11 @@ import '../entities/entities.dart';
 
 abstract class ProjectRepository {
   Future<List<ProjectEntity>> getFeedProjects({
-    String? category,
+    List<String>? skills, // фильтр по навыкам (client-side)
     String? format,
     String? level,
     String? query,
-    int offset = 0,  // ← дефолтные значения
+    int offset = 0,
     int limit = 10,
   });
 

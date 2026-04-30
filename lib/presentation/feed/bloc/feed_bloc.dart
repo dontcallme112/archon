@@ -13,14 +13,14 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
   final GetFeedProjectsUseCase _getFeedProjects;
   Timer? _searchDebounce;
 
-  FeedBloc({
-    required GetFeedProjectsUseCase getFeedProjects,
-  })  : _getFeedProjects = getFeedProjects,
-        super(const FeedState()) {
+  FeedBloc({required GetFeedProjectsUseCase getFeedProjects})
+    : _getFeedProjects = getFeedProjects,
+      super(const FeedState()) {
     on<FeedLoadRequested>(_onLoad);
     on<FeedRefreshRequested>(_onRefresh);
     on<FeedLoadMoreRequested>(_onLoadMore);
-    on<FeedCategoryChanged>(_onCategoryChanged);
+    on<FeedSkillToggled>(_onSkillToggled);
+    on<FeedSkillsCleared>(_onSkillsCleared);
     on<FeedFormatChanged>(_onFormatChanged);
     on<FeedLevelChanged>(_onLevelChanged);
     on<FeedSearchChanged>(_onSearchChanged);
@@ -33,49 +33,75 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
   }
 
   Future<void> _onRefresh(
-      FeedRefreshRequested event, Emitter<FeedState> emit) async {
+    FeedRefreshRequested event,
+    Emitter<FeedState> emit,
+  ) async {
     await _loadProjects(emit, reset: true);
   }
 
   Future<void> _onLoadMore(
-      FeedLoadMoreRequested event, Emitter<FeedState> emit) async {
+    FeedLoadMoreRequested event,
+    Emitter<FeedState> emit,
+  ) async {
     if (!state.hasMore || state.status == FeedStatus.loadingMore) return;
     emit(state.copyWith(status: FeedStatus.loadingMore));
     await _loadProjects(emit, reset: false);
   }
 
-  Future<void> _onCategoryChanged(
-      FeedCategoryChanged event, Emitter<FeedState> emit) async {
-    emit(state.copyWith(
-      activeCategory: event.category,
-      clearCategory: event.category == null,
-      status: FeedStatus.loading,
-    ));
+  Future<void> _onSkillToggled(
+    FeedSkillToggled event,
+    Emitter<FeedState> emit,
+  ) async {
+    final skills = Set<String>.from(state.activeSkills);
+    if (skills.contains(event.skillId)) {
+      skills.remove(event.skillId);
+    } else {
+      skills.add(event.skillId);
+    }
+    emit(state.copyWith(activeSkills: skills, status: FeedStatus.loading));
+    await _loadProjects(emit, reset: true);
+  }
+
+  Future<void> _onSkillsCleared(
+    FeedSkillsCleared event,
+    Emitter<FeedState> emit,
+  ) async {
+    emit(state.copyWith(clearSkills: true, status: FeedStatus.loading));
     await _loadProjects(emit, reset: true);
   }
 
   Future<void> _onFormatChanged(
-      FeedFormatChanged event, Emitter<FeedState> emit) async {
-    emit(state.copyWith(
-      activeFormat: event.format,
-      clearFormat: event.format == null,
-      status: FeedStatus.loading,
-    ));
+    FeedFormatChanged event,
+    Emitter<FeedState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        activeFormat: event.format,
+        clearFormat: event.format == null,
+        status: FeedStatus.loading,
+      ),
+    );
     await _loadProjects(emit, reset: true);
   }
 
   Future<void> _onLevelChanged(
-      FeedLevelChanged event, Emitter<FeedState> emit) async {
-    emit(state.copyWith(
-      activeLevel: event.level,
-      clearLevel: event.level == null,
-      status: FeedStatus.loading,
-    ));
+    FeedLevelChanged event,
+    Emitter<FeedState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        activeLevel: event.level,
+        clearLevel: event.level == null,
+        status: FeedStatus.loading,
+      ),
+    );
     await _loadProjects(emit, reset: true);
   }
 
   Future<void> _onSearchChanged(
-      FeedSearchChanged event, Emitter<FeedState> emit) async {
+    FeedSearchChanged event,
+    Emitter<FeedState> emit,
+  ) async {
     emit(state.copyWith(searchQuery: event.query));
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
@@ -84,24 +110,29 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
   }
 
   Future<void> _onFiltersCleared(
-      FeedFiltersCleared event, Emitter<FeedState> emit) async {
-    emit(state.copyWith(
-      clearCategory: true,
-      clearFormat: true,
-      clearLevel: true,
-      searchQuery: '',
-      status: FeedStatus.loading,
-    ));
+    FeedFiltersCleared event,
+    Emitter<FeedState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        clearSkills: true,
+        clearFormat: true,
+        clearLevel: true,
+        searchQuery: '',
+        status: FeedStatus.loading,
+      ),
+    );
     await _loadProjects(emit, reset: true);
   }
 
-  Future<void> _loadProjects(Emitter<FeedState> emit,
-      {required bool reset}) async {
-    // При reset начинаем с нуля, при loadMore — берём уже загруженные
+  Future<void> _loadProjects(
+    Emitter<FeedState> emit, {
+    required bool reset,
+  }) async {
     final offset = reset ? 0 : state.projects.length;
 
     final result = await _getFeedProjects(
-      category: state.activeCategory,
+      skills: state.activeSkills.isEmpty ? null : state.activeSkills.toList(),
       format: state.activeFormat,
       level: state.activeLevel,
       query: state.searchQuery.isEmpty ? null : state.searchQuery,
@@ -114,16 +145,16 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
         final allProjects = reset
             ? newProjects
             : [...state.projects, ...newProjects];
-        emit(state.copyWith(
-          status: FeedStatus.loaded,
-          projects: allProjects,
-          hasMore: newProjects.length == _kPageSize,
-        ));
+        emit(
+          state.copyWith(
+            status: FeedStatus.loaded,
+            projects: allProjects,
+            hasMore: newProjects.length == _kPageSize,
+          ),
+        );
       },
-      onFailure: (msg) => emit(state.copyWith(
-        status: FeedStatus.error,
-        errorMessage: msg,
-      )),
+      onFailure: (msg) =>
+          emit(state.copyWith(status: FeedStatus.error, errorMessage: msg)),
     );
   }
 

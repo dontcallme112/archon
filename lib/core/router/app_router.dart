@@ -14,8 +14,8 @@ import '../../presentation/create_project/pages/create_project_page.dart';
 import '../../presentation/edit_project/pages/edit_project_page.dart';
 import '../../presentation/profile/pages/profile_page.dart';
 import '../../presentation/search/pages/search_page.dart';
-import '../../presentation/notifications/pages/notifications_page.dart';
 import '../../presentation/settings/pages/settings_page.dart';
+import '../../presentation/splash/pages/splash_page.dart';
 import '../../presentation/common/widgets/main_scaffold.dart';
 
 class AppRouter {
@@ -24,19 +24,18 @@ class AppRouter {
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/login',
+    initialLocation: '/splash', // ← стартуем со splash
 
-    // ─── Auth guard ──────────────────────────────────────────
     redirect: (context, state) {
-      final user = FirebaseAuth.instance.currentUser;
-      final isLoggedIn = user != null;
       final location = state.matchedLocation;
 
-      final protectedRoutes = [
-        '/project/create',
-        '/profile',
-        '/notifications',
-      ];
+      // Splash не редиректим — он сам решает куда идти
+      if (location == '/splash') return null;
+
+      final user = FirebaseAuth.instance.currentUser;
+      final isLoggedIn = user != null;
+
+      final protectedRoutes = ['/project/create', '/profile'];
 
       final isAuthRoute = location == '/login' || location == '/register';
       final isProtected = protectedRoutes.any((r) => location.startsWith(r));
@@ -47,33 +46,35 @@ class AppRouter {
 
       return null;
     },
+
     routes: [
-      // ─── Auth routes ────────────────────────────────────────
+      // ── Splash ──────────────────────────────────────────────
       GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginPage(),
+        path: '/splash',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SplashPage(),
       ),
+
+      // ── Auth ────────────────────────────────────────────────
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
       ),
 
-      // ─── Onboarding (после регистрации) ─────────────────────
+      // ── Onboarding ──────────────────────────────────────────
       GoRoute(
         path: '/onboarding',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const OnboardingPage(),
       ),
 
-      // ─── Shell (bottom nav) ──────────────────────────────────
+      // ── Shell (bottom nav) ──────────────────────────────────
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [
-          GoRoute(
-            path: '/feed',
-            builder: (context, state) => const FeedPage(),
-          ),
+          GoRoute(path: '/feed', builder: (context, state) => const FeedPage()),
           GoRoute(
             path: '/search',
             builder: (context, state) => const SearchPage(),
@@ -82,27 +83,21 @@ class AppRouter {
             path: '/profile',
             builder: (context, state) => const ProfilePage(),
           ),
-          GoRoute(
-            path: '/notifications',
-            builder: (context, state) => const NotificationsPage(),
-          ),
         ],
       ),
 
-      // ─── Full-screen routes ──────────────────────────────────
+      // ── Full-screen routes ───────────────────────────────────
       GoRoute(
         path: '/project/create',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CreateProjectPage(),
       ),
-
       GoRoute(
         path: '/project/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             ProjectPage(projectId: state.pathParameters['id']!),
       ),
-
       GoRoute(
         path: '/project/:id/apply',
         parentNavigatorKey: _rootNavigatorKey,

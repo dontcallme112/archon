@@ -9,21 +9,21 @@ class GetFeedProjectsUseCase {
   GetFeedProjectsUseCase(this._repo);
 
   Future<Result<List<ProjectEntity>>> call({
-    String? category,
+    List<String>? skills, // id навыков из справочника
     String? format,
     String? level,
     String? query,
-    int offset = 0,  // ← добавь
-    int limit = 10,  // ← добавь
+    int offset = 0,
+    int limit = 10,
   }) async {
     try {
       final projects = await _repo.getFeedProjects(
-        category: category,
+        skills: skills,
         format: format,
         level: level,
         query: query,
-        offset: offset,  // ← добавь
-        limit: limit,    // ← добавь
+        offset: offset,
+        limit: limit,
       );
       return Success(projects);
     } catch (e) {
@@ -95,7 +95,10 @@ class UpdateProjectUseCase {
   final ProjectRepository _repo;
   UpdateProjectUseCase(this._repo);
 
-  Future<Result<ProjectEntity>> call(String id, Map<String, dynamic> data) async {
+  Future<Result<ProjectEntity>> call(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final project = await _repo.updateProject(id, data);
       return Success(project);

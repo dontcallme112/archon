@@ -80,10 +80,8 @@ class _FeedView extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => BlocProvider.value(
-        value: bloc,
-        child: const _FilterSheet(),
-      ),
+      builder: (_) =>
+          BlocProvider.value(value: bloc, child: const _FilterSheet()),
     );
   }
 }
@@ -110,8 +108,7 @@ class _FeedBody extends StatelessWidget {
                 children: [
                   Text(
                     state.errorMessage ?? 'Что-то пошло не так',
-                    style:
-                        AppTypography.body.copyWith(color: AppColors.error),
+                    style: AppTypography.body.copyWith(color: AppColors.error),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSizes.md),
@@ -137,9 +134,7 @@ class _FeedBody extends StatelessWidget {
                 const SizedBox(height: AppSizes.md),
                 _ActiveFiltersRow(state: state),
                 const SizedBox(height: AppSizes.xl),
-                _EmptyState(
-                  onCreateTap: () => context.push('/project/create'),
-                ),
+                _EmptyState(onCreateTap: () => context.push('/project/create')),
               ],
             ),
           );
@@ -150,10 +145,8 @@ class _FeedBody extends StatelessWidget {
               context.read<FeedBloc>().add(FeedRefreshRequested()),
           child: ListView.builder(
             padding: const EdgeInsets.all(AppSizes.md),
-            // +1 для Hero, +1 для кнопки «Загрузить ещё»
             itemCount: projects.length + 2,
             itemBuilder: (context, i) {
-              // Hero + активные фильтры
               if (i == 0) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,16 +157,12 @@ class _FeedBody extends StatelessWidget {
                   ],
                 );
               }
-
-              // Карточки проектов
               if (i <= projects.length) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: AppSizes.md),
                   child: ProjectCard(project: projects[i - 1]),
                 );
               }
-
-              // Кнопка «Загрузить ещё» / индикатор / конец списка
               return _LoadMoreButton(state: state);
             },
           ),
@@ -183,7 +172,7 @@ class _FeedBody extends StatelessWidget {
   }
 }
 
-// ─── Кнопка «Загрузить ещё» ───────────────────────────────────────────────
+// ─── Загрузить ещё ────────────────────────────────────────────────────────
 
 class _LoadMoreButton extends StatelessWidget {
   final FeedState state;
@@ -197,7 +186,6 @@ class _LoadMoreButton extends StatelessWidget {
         child: Center(child: CircularProgressIndicator()),
       );
     }
-
     if (!state.hasMore) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
@@ -209,7 +197,6 @@ class _LoadMoreButton extends StatelessWidget {
         ),
       );
     }
-
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.lg, top: AppSizes.sm),
       child: Center(
@@ -224,26 +211,34 @@ class _LoadMoreButton extends StatelessWidget {
   }
 }
 
-// ─── Активные фильтры-чипы ────────────────────────────────────────────────
+// ─── Активные фильтры под Hero ────────────────────────────────────────────
 
 class _ActiveFiltersRow extends StatelessWidget {
   final FeedState state;
   const _ActiveFiltersRow({required this.state});
 
-  String _categoryLabel(String id) =>
-      AppCategories.all.firstWhere((c) => c.id == id,
-          orElse: () => CategoryItem(
-              id: id, label: id, firestoreValue: id, icon: '', order: 0)).label;
+  String _skillLabel(String id) => AppSkills.all
+      .firstWhere(
+        (s) => s.id == id,
+        orElse: () => SkillItem(id: id, label: id, categoryId: ''),
+      )
+      .label;
 
-  String _formatLabel(String id) =>
-      AppFormats.all.firstWhere((f) => f.id == id,
-          orElse: () =>
-              ReferenceItem(id: id, label: id, firestoreValue: id, order: 0)).label;
+  String _formatLabel(String id) => AppFormats.all
+      .firstWhere(
+        (f) => f.id == id,
+        orElse: () =>
+            ReferenceItem(id: id, label: id, firestoreValue: id, order: 0),
+      )
+      .label;
 
-  String _levelLabel(String id) =>
-      AppLevels.all.firstWhere((l) => l.id == id,
-          orElse: () =>
-              ReferenceItem(id: id, label: id, firestoreValue: id, order: 0)).label;
+  String _levelLabel(String id) => AppLevels.all
+      .firstWhere(
+        (l) => l.id == id,
+        orElse: () =>
+            ReferenceItem(id: id, label: id, firestoreValue: id, order: 0),
+      )
+      .label;
 
   @override
   Widget build(BuildContext context) {
@@ -257,145 +252,220 @@ class _ActiveFiltersRow extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: [
-          if (state.activeCategory != null)
-            Chip(
-              label: Text(_categoryLabel(state.activeCategory!)),
+          // Чипы навыков
+          ...state.activeSkills.map(
+            (id) => Chip(
+              label: Text(_skillLabel(id)),
               deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () => bloc.add(FeedCategoryChanged(null)),
+              onDeleted: () => bloc.add(FeedSkillToggled(id)),
             ),
+          ),
+
           if (state.activeFormat != null)
             Chip(
               label: Text(_formatLabel(state.activeFormat!)),
               deleteIcon: const Icon(Icons.close, size: 16),
               onDeleted: () => bloc.add(FeedFormatChanged(null)),
             ),
+
           if (state.activeLevel != null)
             Chip(
               label: Text(_levelLabel(state.activeLevel!)),
               deleteIcon: const Icon(Icons.close, size: 16),
               onDeleted: () => bloc.add(FeedLevelChanged(null)),
             ),
-          ActionChip(
-            label: const Text(
-              'Сбросить всё',
-              style: TextStyle(fontSize: 13, color: AppColors.dark),
-            ),
-            backgroundColor: AppColors.background,
-            side: const BorderSide(color: AppColors.grey, width: 1),
-            onPressed: () => bloc.add(FeedFiltersCleared()),
-          ),
         ],
       ),
     );
   }
 }
 
-// ─── Filter bottom sheet ───────────────────────────────────────────────────
+// ─── Filter bottom sheet ──────────────────────────────────────────────────
 
-class _FilterSheet extends StatelessWidget {
+class _FilterSheet extends StatefulWidget {
   const _FilterSheet();
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  String _activeCategoryId = AppCategories.all.first.id;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<FeedBloc, FeedState>(
       builder: (context, state) {
         final bloc = context.read<FeedBloc>();
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            20, 16, 20,
-            20 + MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Фильтры', style: AppTypography.h3),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+        final skills = AppSkills.byCategory(_activeCategoryId);
 
-                Text('Формат', style: AppTypography.label),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _FilterChip(
-                      label: 'Все',
-                      selected: state.activeFormat == null,
-                      onTap: () => bloc.add(FeedFormatChanged(null)),
-                    ),
-                    ...AppFormats.all.map((fmt) => _FilterChip(
-                          label: fmt.label,
-                          selected: state.activeFormat == fmt.id,
-                          onTap: () => bloc.add(FeedFormatChanged(fmt.id)),
-                        )),
-                  ],
-                ),
-                const SizedBox(height: 16),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (_, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Заголовок
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Фильтры', style: AppTypography.h3),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
 
-                Text('Уровень', style: AppTypography.label),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _FilterChip(
-                      label: 'Все',
-                      selected: state.activeLevel == null,
-                      onTap: () => bloc.add(FeedLevelChanged(null)),
-                    ),
-                    ...AppLevels.all.map((lvl) => _FilterChip(
-                          label: lvl.label,
-                          selected: state.activeLevel == lvl.id,
-                          onTap: () => bloc.add(FeedLevelChanged(lvl.id)),
-                        )),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        // ── Формат ──
+                        Text('Формат', style: AppTypography.label),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _FilterChip(
+                              label: 'Все',
+                              selected: state.activeFormat == null,
+                              onTap: () => bloc.add(FeedFormatChanged(null)),
+                            ),
+                            ...AppFormats.all.map(
+                              (fmt) => _FilterChip(
+                                label: fmt.label,
+                                selected: state.activeFormat == fmt.id,
+                                onTap: () =>
+                                    bloc.add(FeedFormatChanged(fmt.id)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
 
-                Text('Категория', style: AppTypography.label),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _FilterChip(
-                      label: 'Все',
-                      selected: state.activeCategory == null,
-                      onTap: () => bloc.add(FeedCategoryChanged(null)),
-                    ),
-                    ...AppCategories.all.map((cat) => _FilterChip(
-                          label: cat.label,
-                          selected: state.activeCategory == cat.id,
-                          onTap: () => bloc.add(FeedCategoryChanged(cat.id)),
-                        )),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                        // ── Уровень ──
+                        Text('Уровень', style: AppTypography.label),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _FilterChip(
+                              label: 'Все',
+                              selected: state.activeLevel == null,
+                              onTap: () => bloc.add(FeedLevelChanged(null)),
+                            ),
+                            ...AppLevels.all.map(
+                              (lvl) => _FilterChip(
+                                label: lvl.label,
+                                selected: state.activeLevel == lvl.id,
+                                onTap: () => bloc.add(FeedLevelChanged(lvl.id)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
 
-                if (state.hasActiveFilters)
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        bloc.add(FeedFiltersCleared());
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Сбросить все фильтры'),
+                        // ── Навыки ──
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Навыки', style: AppTypography.label),
+                            if (state.activeSkills.isNotEmpty)
+                              GestureDetector(
+                                onTap: () => bloc.add(FeedSkillsCleared()),
+                                child: Text(
+                                  'Сбросить (${state.activeSkills.length})',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Категории навыков — горизонтальный скролл
+                        SizedBox(
+                          height: 36,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: AppCategories.all.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 8),
+                            itemBuilder: (_, i) {
+                              final cat = AppCategories.all[i];
+                              final isActive = cat.id == _activeCategoryId;
+                              return GestureDetector(
+                                onTap: () =>
+                                    setState(() => _activeCategoryId = cat.id),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? AppColors.primary
+                                        : AppColors.background,
+                                    borderRadius: BorderRadius.circular(
+                                      AppSizes.radiusFull,
+                                    ),
+                                    border: Border.all(
+                                      color: isActive
+                                          ? AppColors.primary
+                                          : AppColors.lightGrey,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    cat.label,
+                                    style: AppTypography.caption.copyWith(
+                                      color: isActive
+                                          ? Colors.white
+                                          : AppColors.dark,
+                                      fontWeight: isActive
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Навыки выбранной категории
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: skills
+                              .map(
+                                (s) => _FilterChip(
+                                  label: s.label,
+                                  selected: state.activeSkills.contains(s.id),
+                                  onTap: () => bloc.add(FeedSkillToggled(s.id)),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
                   ),
-              ],
-            ),
-          ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -498,12 +568,18 @@ class _EmptyState extends StatelessWidget {
             color: AppColors.primarySurface,
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.folder_open_rounded,
-              size: 48, color: AppColors.primary),
+          child: const Icon(
+            Icons.folder_open_rounded,
+            size: 48,
+            color: AppColors.primary,
+          ),
         ),
         const SizedBox(height: AppSizes.lg),
-        Text('Проектов пока нет',
-            style: AppTypography.h2, textAlign: TextAlign.center),
+        Text(
+          'Проектов пока нет',
+          style: AppTypography.h2,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: AppSizes.sm),
         Text(
           'Будь первым — создай проект\nи собери свою команду',

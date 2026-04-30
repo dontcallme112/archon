@@ -8,10 +8,14 @@ class FeedRefreshRequested extends FeedEvent {}
 
 class FeedLoadMoreRequested extends FeedEvent {}
 
-class FeedCategoryChanged extends FeedEvent {
-  final String? category;
-  FeedCategoryChanged(this.category);
+/// Переключение навыка (добавить/убрать из множества)
+class FeedSkillToggled extends FeedEvent {
+  final String skillId;
+  FeedSkillToggled(this.skillId);
 }
+
+/// Сброс всех выбранных навыков
+class FeedSkillsCleared extends FeedEvent {}
 
 class FeedFormatChanged extends FeedEvent {
   final String? format;

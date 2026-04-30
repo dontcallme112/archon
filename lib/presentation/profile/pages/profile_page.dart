@@ -123,7 +123,6 @@ class _ProfilePageState extends State<ProfilePage>
             ],
           ),
           const SizedBox(height: AppSizes.md),
-
           Row(
             children: [
               AppAvatar(name: user.name, imageUrl: user.avatarUrl, size: 72),
@@ -135,11 +134,13 @@ class _ProfilePageState extends State<ProfilePage>
                     Text(user.name, style: AppTypography.h3),
                     if (user.bio != null && user.bio!.isNotEmpty)
                       Text(user.bio!, style: AppTypography.caption),
-                    if (user.portfolioUrl != null && user.portfolioUrl!.isNotEmpty)
+                    if (user.portfolioUrl != null &&
+                        user.portfolioUrl!.isNotEmpty)
                       Text(
                         user.portfolioUrl!,
-                        style: AppTypography.caption
-                            .copyWith(color: AppColors.primary),
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
                     if (user.telegram != null && user.telegram!.isNotEmpty)
                       Text(user.telegram!, style: AppTypography.caption),
@@ -149,14 +150,10 @@ class _ProfilePageState extends State<ProfilePage>
             ],
           ),
           const SizedBox(height: AppSizes.md),
-
           Row(
-            children: [
-              _StatBadge(value: '$projectsCount', label: 'Проектов'),
-            ],
+            children: [_StatBadge(value: '$projectsCount', label: 'Проектов')],
           ),
           const SizedBox(height: AppSizes.md),
-
           if (user.skills.isNotEmpty)
             Wrap(
               spacing: 6,
@@ -164,7 +161,6 @@ class _ProfilePageState extends State<ProfilePage>
               children: user.skills.map((s) => SkillChip(label: s)).toList(),
             ),
           const SizedBox(height: AppSizes.md),
-
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -179,7 +175,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 }
 
-// ─── PROJECTS TAB ─────────────────────────────────────────────────────────
+// ─── MY PROJECTS TAB ─────────────────────────────────────────────────────
 
 class _MyProjectsTab extends StatelessWidget {
   final List<ProjectEntity> projects;
@@ -192,14 +188,21 @@ class _MyProjectsTab extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.folder_open_rounded,
-                size: 64, color: AppColors.lightGrey),
+            const Icon(
+              Icons.folder_open_rounded,
+              size: 64,
+              color: AppColors.lightGrey,
+            ),
             const SizedBox(height: AppSizes.md),
-            Text('Нет проектов',
-                style: AppTypography.h3.copyWith(color: AppColors.grey)),
+            Text(
+              'Нет проектов',
+              style: AppTypography.h3.copyWith(color: AppColors.grey),
+            ),
             const SizedBox(height: AppSizes.sm),
-            Text('Создай первый проект',
-                style: AppTypography.body.copyWith(color: AppColors.grey)),
+            Text(
+              'Создай первый проект',
+              style: AppTypography.body.copyWith(color: AppColors.grey),
+            ),
             const SizedBox(height: AppSizes.md),
             ElevatedButton.icon(
               onPressed: () => context.push('/project/create'),
@@ -214,13 +217,353 @@ class _MyProjectsTab extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.all(AppSizes.md),
       itemCount: projects.length,
-      // ✅ Используем ProjectCard как в ленте
-      itemBuilder: (context, i) => ProjectCard(project: projects[i]),
+      itemBuilder: (context, i) {
+        final project = projects[i];
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => _OwnerProjectPage(project: project),
+              ),
+            );
+          },
+          child: AbsorbPointer(child: ProjectCard(project: project)),
+        );
+      },
     );
   }
 }
 
-// ─── APPLICATIONS TAB ─────────────────────────────────────────────────────
+// ─── OWNER PROJECT PAGE ──────────────────────────────────────────────────
+
+class _OwnerProjectPage extends StatelessWidget {
+  final ProjectEntity project;
+
+  const _OwnerProjectPage({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: Text(project.title),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Проект'),
+              Tab(text: 'Заявки'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _OwnerProjectInfoTab(project: project),
+            _OwnerProjectApplicationsTab(projectId: project.id),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnerProjectInfoTab extends StatelessWidget {
+  final ProjectEntity project;
+
+  const _OwnerProjectInfoTab({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSizes.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AbsorbPointer(child: ProjectCard(project: project)),
+          const SizedBox(height: AppSizes.md),
+          Text('Описание проекта', style: AppTypography.h3),
+          const SizedBox(height: AppSizes.sm),
+          Text(
+            project.fullDescription,
+            style: AppTypography.body.copyWith(color: AppColors.darkGrey),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OwnerProjectApplicationsTab extends StatelessWidget {
+  final String projectId;
+
+  const _OwnerProjectApplicationsTab({required this.projectId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('applications')
+          .where('projectId', isEqualTo: projectId)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snap.hasData || snap.data!.docs.isEmpty) {
+          return Center(
+            child: Text(
+              'Заявок пока нет',
+              style: AppTypography.h3.copyWith(color: AppColors.grey),
+            ),
+          );
+        }
+
+        final docs = snap.data!.docs;
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(AppSizes.md),
+          itemCount: docs.length,
+          itemBuilder: (context, i) {
+            final doc = docs[i];
+            final data = doc.data() as Map<String, dynamic>;
+            final status = data['status'] ?? 'pending';
+            final isPending = status == 'pending';
+
+            return InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        _ApplicationDetailsPage(applicationRef: doc.reference),
+                  ),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: AppSizes.md),
+                padding: const EdgeInsets.all(AppSizes.md),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.dark.withOpacity(0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        AppAvatar(
+                          name: data['applicantName'] ?? 'User',
+                          imageUrl: data['applicantAvatarUrl'],
+                          size: 42,
+                        ),
+                        const SizedBox(width: AppSizes.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data['applicantName'] ?? 'Пользователь',
+                                style: AppTypography.h3,
+                              ),
+                              Text(
+                                data['role'] ?? '',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _StatusBadge(status: status),
+                      ],
+                    ),
+                    const SizedBox(height: AppSizes.sm),
+                    Text(
+                      data['motivation'] ?? '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.body,
+                    ),
+                    if (isPending) ...[
+                      const SizedBox(height: AppSizes.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _updateApplicationStatus(
+                                context: context,
+                                applicationRef: doc.reference,
+                                accept: false,
+                              ),
+                              icon: const Icon(Icons.close_rounded, size: 18),
+                              label: const Text('Отклонить'),
+                            ),
+                          ),
+                          const SizedBox(width: AppSizes.sm),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _updateApplicationStatus(
+                                context: context,
+                                applicationRef: doc.reference,
+                                accept: true,
+                              ),
+                              icon: const Icon(Icons.check_rounded, size: 18),
+                              label: const Text('Принять'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+// ─── APPLICATION DETAILS PAGE ────────────────────────────────────────────
+
+class _ApplicationDetailsPage extends StatelessWidget {
+  final DocumentReference applicationRef;
+
+  const _ApplicationDetailsPage({required this.applicationRef});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('Заявка')),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: applicationRef.snapshots(),
+        builder: (context, snap) {
+          if (!snap.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final data = snap.data!.data() as Map<String, dynamic>;
+          final status = data['status'] ?? 'pending';
+          final isPending = status == 'pending';
+          final skills = List<String>.from(data['skills'] ?? []);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSizes.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSizes.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          AppAvatar(
+                            name: data['applicantName'] ?? 'User',
+                            imageUrl: data['applicantAvatarUrl'],
+                            size: 56,
+                          ),
+                          const SizedBox(width: AppSizes.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  data['applicantName'] ?? 'Пользователь',
+                                  style: AppTypography.h2,
+                                ),
+                                const SizedBox(height: 4),
+                                _StatusBadge(status: status),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSizes.md),
+                      _InfoRow(label: 'Роль', value: data['role'] ?? '-'),
+                      _InfoRow(
+                        label: 'Telegram',
+                        value: data['telegram'] ?? '-',
+                      ),
+                      _InfoRow(
+                        label: 'Портфолио',
+                        value: data['portfolioUrl'] ?? '-',
+                      ),
+                      const SizedBox(height: AppSizes.md),
+                      Text('Навыки', style: AppTypography.label),
+                      const SizedBox(height: AppSizes.xs),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: skills
+                            .map((skill) => SkillChip(label: skill))
+                            .toList(),
+                      ),
+                      const SizedBox(height: AppSizes.md),
+                      Text('Мотивация', style: AppTypography.label),
+                      const SizedBox(height: AppSizes.xs),
+                      Text(data['motivation'] ?? '', style: AppTypography.body),
+                    ],
+                  ),
+                ),
+                if (isPending) ...[
+                  const SizedBox(height: AppSizes.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _updateApplicationStatus(
+                            context: context,
+                            applicationRef: applicationRef,
+                            accept: false,
+                          ),
+                          icon: const Icon(Icons.close_rounded),
+                          label: const Text('Отклонить'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.sm),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _updateApplicationStatus(
+                            context: context,
+                            applicationRef: applicationRef,
+                            accept: true,
+                          ),
+                          icon: const Icon(Icons.check_rounded),
+                          label: const Text('Принять'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ─── MY APPLICATIONS TAB ─────────────────────────────────────────────────
 
 class _MyApplicationsTab extends StatelessWidget {
   const _MyApplicationsTab();
@@ -246,20 +589,9 @@ class _MyApplicationsTab extends StatelessWidget {
 
         if (!snap.hasData || snap.data!.docs.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.send_rounded,
-                  size: 64,
-                  color: AppColors.lightGrey,
-                ),
-                const SizedBox(height: AppSizes.md),
-                Text(
-                  'У вас пока нет заявок',
-                  style: AppTypography.h3.copyWith(color: AppColors.grey),
-                ),
-              ],
+            child: Text(
+              'У вас пока нет заявок',
+              style: AppTypography.h3.copyWith(color: AppColors.grey),
             ),
           );
         }
@@ -271,6 +603,7 @@ class _MyApplicationsTab extends StatelessWidget {
           itemCount: docs.length,
           itemBuilder: (context, i) {
             final data = docs[i].data() as Map<String, dynamic>;
+            final status = data['status'] ?? 'pending';
 
             return Container(
               margin: const EdgeInsets.only(bottom: AppSizes.md),
@@ -294,12 +627,7 @@ class _MyApplicationsTab extends StatelessWidget {
                     style: AppTypography.h3,
                   ),
                   const SizedBox(height: AppSizes.xs),
-                  Text(
-                    'Статус: ${data['status']}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
+                  _StatusBadge(status: status),
                   const SizedBox(height: AppSizes.sm),
                   Text(
                     data['motivation'] ?? '',
@@ -317,7 +645,142 @@ class _MyApplicationsTab extends StatelessWidget {
   }
 }
 
-// ─── WIDGETS ──────────────────────────────────────────────────────────────
+// ─── FIRESTORE STATUS UPDATE ─────────────────────────────────────────────
+
+Future<void> _updateApplicationStatus({
+  required BuildContext context,
+  required DocumentReference applicationRef,
+  required bool accept,
+}) async {
+  try {
+    final db = FirebaseFirestore.instance;
+
+    await db.runTransaction((transaction) async {
+      final appSnap = await transaction.get(applicationRef);
+
+      if (!appSnap.exists) {
+        throw Exception('Заявка не найдена');
+      }
+
+      final appData = appSnap.data() as Map<String, dynamic>;
+      final currentStatus = appData['status'] ?? 'pending';
+
+      if (currentStatus != 'pending') {
+        return;
+      }
+
+      if (accept) {
+        final projectId = appData['projectId'] as String;
+        final projectRef = db.collection('projects').doc(projectId);
+        final projectSnap = await transaction.get(projectRef);
+
+        if (!projectSnap.exists) {
+          throw Exception('Проект не найден');
+        }
+
+        final projectData = projectSnap.data() as Map<String, dynamic>;
+
+        final filledField = projectData.containsKey('filledSlots')
+            ? 'filledSlots'
+            : 'filled_slots';
+        final totalField = projectData.containsKey('totalSlots')
+            ? 'totalSlots'
+            : 'total_slots';
+
+        final filledSlots = (projectData[filledField] ?? 0) as int;
+        final totalSlots = (projectData[totalField] ?? 0) as int;
+
+        if (filledSlots >= totalSlots) {
+          throw Exception('Свободных мест больше нет');
+        }
+
+        transaction.update(projectRef, {filledField: FieldValue.increment(1)});
+
+        transaction.update(applicationRef, {
+          'status': 'accepted',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        transaction.update(applicationRef, {
+          'status': 'rejected',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(accept ? 'Заявка принята' : 'Заявка отклонена')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+    );
+  }
+}
+
+// ─── WIDGETS ─────────────────────────────────────────────────────────────
+
+class _StatusBadge extends StatelessWidget {
+  final String status;
+
+  const _StatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    Color color;
+    String text;
+
+    switch (status) {
+      case 'accepted':
+      case 'approved':
+        color = AppColors.success;
+        text = 'approved';
+        break;
+      case 'rejected':
+        color = AppColors.error;
+        text = 'rejected';
+        break;
+      default:
+        color = AppColors.primary;
+        text = 'pending';
+    }
+
+    return Text(
+      'Статус: $text',
+      style: AppTypography.caption.copyWith(
+        color: color,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: AppTypography.caption.copyWith(color: AppColors.grey),
+            ),
+          ),
+          Expanded(child: Text(value, style: AppTypography.body)),
+        ],
+      ),
+    );
+  }
+}
 
 class _StatBadge extends StatelessWidget {
   final String value;
