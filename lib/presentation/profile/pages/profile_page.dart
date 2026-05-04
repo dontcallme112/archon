@@ -185,31 +185,39 @@ class _MyProjectsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (projects.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.folder_open_rounded,
-              size: 64,
-              color: AppColors.lightGrey,
-            ),
-            const SizedBox(height: AppSizes.md),
-            Text(
-              'Нет проектов',
-              style: AppTypography.h3.copyWith(color: AppColors.grey),
-            ),
-            const SizedBox(height: AppSizes.sm),
-            Text(
-              'Создай первый проект',
-              style: AppTypography.body.copyWith(color: AppColors.grey),
-            ),
-            const SizedBox(height: AppSizes.md),
-            ElevatedButton.icon(
-              onPressed: () => context.push('/project/create'),
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Создать проект'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.md),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.folder_open_rounded,
+                size: 64,
+                color: AppColors.lightGrey,
+              ),
+              const SizedBox(height: AppSizes.md),
+              Text(
+                'Нет проектов',
+                style: AppTypography.h3.copyWith(color: AppColors.grey),
+              ),
+              const SizedBox(height: AppSizes.sm),
+              Text(
+                'Создай первый проект',
+                style: AppTypography.body.copyWith(color: AppColors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSizes.lg),
+              SizedBox(
+                width: 230,
+                height: 46,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/project/create'),
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Создать проект'),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -229,7 +237,9 @@ class _MyProjectsTab extends StatelessWidget {
               ),
             );
           },
-          child: AbsorbPointer(child: ProjectCard(project: project)),
+          child: AbsorbPointer(
+            child: _ProjectCardWithApplicationDot(project: project),
+          ),
         );
       },
     );
@@ -306,11 +316,20 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
       stream: FirebaseFirestore.instance
           .collection('applications')
           .where('projectId', isEqualTo: projectId)
-          .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snap.hasError) {
+          return Center(
+            child: Text(
+              'Ошибка загрузки заявок: ${snap.error}',
+              textAlign: TextAlign.center,
+              style: AppTypography.body.copyWith(color: AppColors.error),
+            ),
+          );
         }
 
         if (!snap.hasData || snap.data!.docs.isEmpty) {
@@ -778,6 +797,55 @@ class _InfoRow extends StatelessWidget {
           Expanded(child: Text(value, style: AppTypography.body)),
         ],
       ),
+    );
+  }
+}
+
+class _ProjectCardWithApplicationDot extends StatelessWidget {
+  final ProjectEntity project;
+
+  const _ProjectCardWithApplicationDot({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('applications')
+          .where('projectId', isEqualTo: project.id)
+          .where('status', isEqualTo: 'pending')
+          .snapshots(),
+      builder: (context, snapshot) {
+        final hasNewApplications =
+            snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+        return Stack(
+          children: [
+            ProjectCard(project: project),
+
+            if (hasNewApplications)
+              Positioned(
+                top: 14,
+                right: 14,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(113, 255, 129, 1),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color.fromRGBO(113, 255, 129, 1), width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.error.withOpacity(0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

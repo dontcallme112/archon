@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:student_app/domain/repositories/firestore_application_repository.dart';
 import 'package:student_app/domain/repositories/firestore_project_repository.dart';
 import 'package:student_app/domain/repositories/firestore_user_repository.dart';
@@ -17,7 +18,8 @@ import 'domain/usecases/other_usecases.dart';
 import 'domain/usecases/project/project_usecases.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: binding);
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -27,6 +29,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FlutterNativeSplash.remove();
 
   runApp(const ProjectHubApp());
 }
@@ -38,7 +42,6 @@ class ProjectHubApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        // ───── Repositories ─────
         RepositoryProvider<ProjectRepository>(
           create: (_) => FirestoreProjectRepository(),
         ),
@@ -48,8 +51,6 @@ class ProjectHubApp extends StatelessWidget {
         RepositoryProvider<UserRepository>(
           create: (_) => FirestoreUserRepository(),
         ),
-
-        // ───── UseCases ─────
         RepositoryProvider(
           create: (context) => GetFeedProjectsUseCase(
             context.read<ProjectRepository>(),

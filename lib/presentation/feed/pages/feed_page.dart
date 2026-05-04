@@ -108,7 +108,8 @@ class _FeedBody extends StatelessWidget {
                 children: [
                   Text(
                     state.errorMessage ?? 'Что-то пошло не так',
-                    style: AppTypography.body.copyWith(color: AppColors.error),
+                    style:
+                        AppTypography.body.copyWith(color: AppColors.error),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSizes.md),
@@ -134,7 +135,8 @@ class _FeedBody extends StatelessWidget {
                 const SizedBox(height: AppSizes.md),
                 _ActiveFiltersRow(state: state),
                 const SizedBox(height: AppSizes.xl),
-                _EmptyState(onCreateTap: () => context.push('/project/create')),
+                _EmptyState(
+                    onCreateTap: () => context.push('/project/create')),
               ],
             ),
           );
@@ -252,33 +254,27 @@ class _ActiveFiltersRow extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: [
-          // Чипы навыков
           ...state.activeSkills.map(
-            (id) => Chip(
-              label: Text(_skillLabel(id)),
-              deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () => bloc.add(FeedSkillToggled(id)),
-            ),
+            (id) => Chip(label: Text(_skillLabel(id))),
           ),
-
           if (state.activeFormat != null)
-            Chip(
-              label: Text(_formatLabel(state.activeFormat!)),
-              deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () => bloc.add(FeedFormatChanged(null)),
-            ),
-
+            Chip(label: Text(_formatLabel(state.activeFormat!))),
           if (state.activeLevel != null)
-            Chip(
-              label: Text(_levelLabel(state.activeLevel!)),
-              deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () => bloc.add(FeedLevelChanged(null)),
+            Chip(label: Text(_levelLabel(state.activeLevel!))),
+          ActionChip(
+            label: const Text(
+              'Сбросить фильтры',
+              style: TextStyle(fontSize: 13, color: AppColors.primary),
             ),
+            backgroundColor: AppColors.primarySurface,
+            side: const BorderSide(color: AppColors.primary, width: 1),
+            onPressed: () => bloc.add(FeedFiltersCleared()),
+          ),
         ],
       ),
     );
   }
-}
+} // ← закрывающая скобка _ActiveFiltersRow
 
 // ─── Filter bottom sheet ──────────────────────────────────────────────────
 
@@ -310,7 +306,6 @@ class _FilterSheetState extends State<_FilterSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Заголовок
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -322,12 +317,10 @@ class _FilterSheetState extends State<_FilterSheet> {
                     ],
                   ),
                   const SizedBox(height: 4),
-
                   Expanded(
                     child: ListView(
                       controller: scrollController,
                       children: [
-                        // ── Формат ──
                         Text('Формат', style: AppTypography.label),
                         const SizedBox(height: 8),
                         Wrap(
@@ -351,7 +344,6 @@ class _FilterSheetState extends State<_FilterSheet> {
                         ),
                         const SizedBox(height: 16),
 
-                        // ── Уровень ──
                         Text('Уровень', style: AppTypography.label),
                         const SizedBox(height: 8),
                         Wrap(
@@ -367,14 +359,14 @@ class _FilterSheetState extends State<_FilterSheet> {
                               (lvl) => _FilterChip(
                                 label: lvl.label,
                                 selected: state.activeLevel == lvl.id,
-                                onTap: () => bloc.add(FeedLevelChanged(lvl.id)),
+                                onTap: () =>
+                                    bloc.add(FeedLevelChanged(lvl.id)),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
 
-                        // ── Навыки ──
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -393,7 +385,6 @@ class _FilterSheetState extends State<_FilterSheet> {
                         ),
                         const SizedBox(height: 8),
 
-                        // Категории навыков — горизонтальный скролл
                         SizedBox(
                           height: 36,
                           child: ListView.separated(
@@ -405,21 +396,19 @@ class _FilterSheetState extends State<_FilterSheet> {
                               final cat = AppCategories.all[i];
                               final isActive = cat.id == _activeCategoryId;
                               return GestureDetector(
-                                onTap: () =>
-                                    setState(() => _activeCategoryId = cat.id),
+                                onTap: () => setState(
+                                    () => _activeCategoryId = cat.id),
                                 child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 150),
+                                  duration:
+                                      const Duration(milliseconds: 150),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
+                                      horizontal: 12, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: isActive
                                         ? AppColors.primary
                                         : AppColors.background,
                                     borderRadius: BorderRadius.circular(
-                                      AppSizes.radiusFull,
-                                    ),
+                                        AppSizes.radiusFull),
                                     border: Border.all(
                                       color: isActive
                                           ? AppColors.primary
@@ -444,7 +433,6 @@ class _FilterSheetState extends State<_FilterSheet> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Навыки выбранной категории
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -452,8 +440,10 @@ class _FilterSheetState extends State<_FilterSheet> {
                               .map(
                                 (s) => _FilterChip(
                                   label: s.label,
-                                  selected: state.activeSkills.contains(s.id),
-                                  onTap: () => bloc.add(FeedSkillToggled(s.id)),
+                                  selected:
+                                      state.activeSkills.contains(s.id),
+                                  onTap: () =>
+                                      bloc.add(FeedSkillToggled(s.id)),
                                 ),
                               )
                               .toList(),
@@ -471,6 +461,8 @@ class _FilterSheetState extends State<_FilterSheet> {
     );
   }
 }
+
+// ─── Filter chip ──────────────────────────────────────────────────────────
 
 class _FilterChip extends StatelessWidget {
   final String label;
@@ -575,11 +567,8 @@ class _EmptyState extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.lg),
-        Text(
-          'Проектов пока нет',
-          style: AppTypography.h2,
-          textAlign: TextAlign.center,
-        ),
+        Text('Проектов пока нет',
+            style: AppTypography.h2, textAlign: TextAlign.center),
         const SizedBox(height: AppSizes.sm),
         Text(
           'Будь первым — создай проект\nи собери свою команду',
