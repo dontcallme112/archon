@@ -830,9 +830,12 @@ class _ProjectCardWithApplicationDot extends StatelessWidget {
                   width: 14,
                   height: 14,
                   decoration: BoxDecoration(
-                    color: const Color.fromRGBO(113, 255, 129, 1),
+                    color: const Color.fromARGB(255, 171, 255, 180),
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color.fromRGBO(113, 255, 129, 1), width: 2),
+                    border: Border.all(
+                      color: const Color.fromARGB(255, 171, 255, 180),
+                      width: 2,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.error.withOpacity(0.4),

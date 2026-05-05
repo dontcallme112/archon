@@ -108,8 +108,7 @@ class _FeedBody extends StatelessWidget {
                 children: [
                   Text(
                     state.errorMessage ?? 'Что-то пошло не так',
-                    style:
-                        AppTypography.body.copyWith(color: AppColors.error),
+                    style: AppTypography.body.copyWith(color: AppColors.error),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSizes.md),
@@ -135,8 +134,7 @@ class _FeedBody extends StatelessWidget {
                 const SizedBox(height: AppSizes.md),
                 _ActiveFiltersRow(state: state),
                 const SizedBox(height: AppSizes.xl),
-                _EmptyState(
-                    onCreateTap: () => context.push('/project/create')),
+                _EmptyState(onCreateTap: () => context.push('/project/create')),
               ],
             ),
           );
@@ -250,17 +248,26 @@ class _ActiveFiltersRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ...state.activeSkills.map(
-            (id) => Chip(label: Text(_skillLabel(id))),
+          // Чипы активных фильтров
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ...state.activeSkills.map(
+                (id) => Chip(label: Text(_skillLabel(id))),
+              ),
+              if (state.activeFormat != null)
+                Chip(label: Text(_formatLabel(state.activeFormat!))),
+              if (state.activeLevel != null)
+                Chip(label: Text(_levelLabel(state.activeLevel!))),
+            ],
           ),
-          if (state.activeFormat != null)
-            Chip(label: Text(_formatLabel(state.activeFormat!))),
-          if (state.activeLevel != null)
-            Chip(label: Text(_levelLabel(state.activeLevel!))),
+          const SizedBox(height: 8),
+
+          // Кнопка сброса — всегда внизу отдельно
           ActionChip(
             label: const Text(
               'Сбросить фильтры',
@@ -359,8 +366,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                               (lvl) => _FilterChip(
                                 label: lvl.label,
                                 selected: state.activeLevel == lvl.id,
-                                onTap: () =>
-                                    bloc.add(FeedLevelChanged(lvl.id)),
+                                onTap: () => bloc.add(FeedLevelChanged(lvl.id)),
                               ),
                             ),
                           ],
@@ -396,19 +402,21 @@ class _FilterSheetState extends State<_FilterSheet> {
                               final cat = AppCategories.all[i];
                               final isActive = cat.id == _activeCategoryId;
                               return GestureDetector(
-                                onTap: () => setState(
-                                    () => _activeCategoryId = cat.id),
+                                onTap: () =>
+                                    setState(() => _activeCategoryId = cat.id),
                                 child: AnimatedContainer(
-                                  duration:
-                                      const Duration(milliseconds: 150),
+                                  duration: const Duration(milliseconds: 150),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: isActive
                                         ? AppColors.primary
                                         : AppColors.background,
                                     borderRadius: BorderRadius.circular(
-                                        AppSizes.radiusFull),
+                                      AppSizes.radiusFull,
+                                    ),
                                     border: Border.all(
                                       color: isActive
                                           ? AppColors.primary
@@ -440,10 +448,8 @@ class _FilterSheetState extends State<_FilterSheet> {
                               .map(
                                 (s) => _FilterChip(
                                   label: s.label,
-                                  selected:
-                                      state.activeSkills.contains(s.id),
-                                  onTap: () =>
-                                      bloc.add(FeedSkillToggled(s.id)),
+                                  selected: state.activeSkills.contains(s.id),
+                                  onTap: () => bloc.add(FeedSkillToggled(s.id)),
                                 ),
                               )
                               .toList(),
@@ -508,33 +514,68 @@ class _HeroSection extends StatelessWidget {
     final cs = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [cs.primary, cs.primary.withOpacity(0.75)],
+          colors: [cs.primary, cs.primary.withOpacity(0.78)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(
-            'Найди свою команду',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: cs.onPrimary,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
+          Positioned(
+            right: -18,
+            bottom: -22,
+            child: Icon(
+              Icons.groups_rounded,
+              size: 130,
+              color: Colors.white.withOpacity(0.12),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Платформа для поиска стажировок и участия в реальных проектах. '
-            'Присоединяйся к командам, прокачивай навыки и строй портфолио.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: cs.onPrimary.withOpacity(0.9),
-              height: 1.5,
+          Positioned(
+            right: 18,
+            bottom: 18,
+            child: Container(
+              width: 70,
+              height: 58,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.16),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.laptop_mac_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 110, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Найди свою команду',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: cs.onPrimary,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Платформа для поиска стажировок и участия в реальных проектах. '
+                  'Присоединяйся к командам, прокачивай навыки и строй портфолио.',
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onPrimary.withOpacity(0.9),
+                    height: 1.35,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -542,7 +583,6 @@ class _HeroSection extends StatelessWidget {
     );
   }
 }
-
 // ─── Empty state ──────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
@@ -567,8 +607,11 @@ class _EmptyState extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.lg),
-        Text('Проектов пока нет',
-            style: AppTypography.h2, textAlign: TextAlign.center),
+        Text(
+          'Проектов пока нет',
+          style: AppTypography.h2,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: AppSizes.sm),
         Text(
           'Будь первым — создай проект\nи собери свою команду',

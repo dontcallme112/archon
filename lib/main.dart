@@ -26,12 +26,10 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  FlutterNativeSplash.remove();
-
+  // FlutterNativeSplash.remove() убран отсюда —
+  // теперь вызывается в SplashPage.initState()
   runApp(const ProjectHubApp());
 }
 
@@ -52,14 +50,12 @@ class ProjectHubApp extends StatelessWidget {
           create: (_) => FirestoreUserRepository(),
         ),
         RepositoryProvider(
-          create: (context) => GetFeedProjectsUseCase(
-            context.read<ProjectRepository>(),
-          ),
+          create: (context) =>
+              GetFeedProjectsUseCase(context.read<ProjectRepository>()),
         ),
         RepositoryProvider(
-          create: (context) => SubmitApplicationUseCase(
-            context.read<ApplicationRepository>(),
-          ),
+          create: (context) =>
+              SubmitApplicationUseCase(context.read<ApplicationRepository>()),
         ),
         RepositoryProvider(
           create: (context) => GetProjectApplicationsUseCase(
@@ -72,9 +68,8 @@ class ProjectHubApp extends StatelessWidget {
           ),
         ),
         RepositoryProvider(
-          create: (context) => GetCurrentUserUseCase(
-            context.read<UserRepository>(),
-          ),
+          create: (context) =>
+              GetCurrentUserUseCase(context.read<UserRepository>()),
         ),
       ],
       child: MultiBlocProvider(

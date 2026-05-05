@@ -30,9 +30,18 @@ class _EditProjectPageState extends State<EditProjectPage> {
   DateTime? _deadline;
 
   final _availableSkills = [
-    'Figma', 'UI/UX', 'Sketch', 'Flutter',
-    'React', 'Node.js', 'Python', 'iOS',
-    'Android', 'Marketing', 'SMM', 'ML/AI',
+    'Figma',
+    'UI/UX',
+    'Sketch',
+    'Flutter',
+    'React',
+    'Node.js',
+    'Python',
+    'iOS',
+    'Android',
+    'Marketing',
+    'SMM',
+    'ML/AI',
   ];
   final _formats = ['Онлайн', 'Оффлайн'];
   final _levels = ['junior', 'middle', 'senior'];
@@ -41,11 +50,15 @@ class _EditProjectPageState extends State<EditProjectPage> {
   void initState() {
     super.initState();
     // Pre-fill with existing project data
-    _titleController =
-        TextEditingController(text: 'Разработка E-Commerce проекта');
-    _shortDescController =
-        TextEditingController(text: 'краткое описание проекта');
-    _fullDescController = TextEditingController(text: 'Полное описание проекта. Цели, задачи, ожидаемый результат.');
+    _titleController = TextEditingController(
+      text: 'Разработка E-Commerce проекта',
+    );
+    _shortDescController = TextEditingController(
+      text: 'краткое описание проекта',
+    );
+    _fullDescController = TextEditingController(
+      text: 'Полное описание проекта. Цели, задачи, ожидаемый результат.',
+    );
     _selectedSkills = {'React', 'Node.js', 'UI/UX'};
     _slots = 4;
     _format = 'Онлайн';
@@ -83,14 +96,18 @@ class _EditProjectPageState extends State<EditProjectPage> {
               Container(
                 color: AppColors.white,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.sm, vertical: AppSizes.xs),
+                  horizontal: AppSizes.sm,
+                  vertical: AppSizes.xs,
+                ),
                 child: Column(
                   children: [
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_rounded,
-                              size: 20),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_rounded,
+                            size: 20,
+                          ),
                           onPressed: () {
                             if (_step > 0) {
                               setState(() => _step--);
@@ -105,12 +122,14 @@ class _EditProjectPageState extends State<EditProjectPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Редактирование',
-                                  style: AppTypography.h3),
+                              Text('Редактирование', style: AppTypography.h3),
                               if (_hasChanges)
-                                Text('Есть несохранённые изменения',
-                                    style: AppTypography.caption
-                                        .copyWith(color: AppColors.warning)),
+                                Text(
+                                  'Есть несохранённые изменения',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.warning,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -119,7 +138,11 @@ class _EditProjectPageState extends State<EditProjectPage> {
                     // Step indicator
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
-                          AppSizes.md, 4, AppSizes.md, AppSizes.sm),
+                        AppSizes.md,
+                        4,
+                        AppSizes.md,
+                        AppSizes.sm,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -133,14 +156,16 @@ class _EditProjectPageState extends State<EditProjectPage> {
                               return Expanded(
                                 child: Container(
                                   margin: EdgeInsets.only(
-                                      right: i == 0 ? 6 : 0),
+                                    right: i == 0 ? 6 : 0,
+                                  ),
                                   height: 4,
                                   decoration: BoxDecoration(
                                     color: i <= _step
                                         ? AppColors.primary
                                         : AppColors.lightGrey,
                                     borderRadius: BorderRadius.circular(
-                                        AppSizes.radiusFull),
+                                      AppSizes.radiusFull,
+                                    ),
                                   ),
                                 ),
                               );
@@ -216,9 +241,10 @@ class _EditProjectPageState extends State<EditProjectPage> {
                   color: AppColors.white,
                   boxShadow: [
                     BoxShadow(
-                        color: AppColors.dark.withOpacity(0.06),
-                        blurRadius: 12,
-                        offset: const Offset(0, -3))
+                      color: AppColors.dark.withOpacity(0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, -3),
+                    ),
                   ],
                 ),
                 child: _step == 0
@@ -233,15 +259,20 @@ class _EditProjectPageState extends State<EditProjectPage> {
                                       width: 16,
                                       height: 16,
                                       child: CircularProgressIndicator(
-                                          color: AppColors.white,
-                                          strokeWidth: 2),
+                                        color: AppColors.white,
+                                        strokeWidth: 2,
+                                      ),
                                     )
-                                  : const Icon(Icons.save_rounded,
-                                      size: 18),
+                                  : const Icon(Icons.save_rounded, size: 18),
                               label: Text(
-                                  _isSaving ? 'Сохранение...' : 'Сохранить'),
+                                _isSaving ? 'Сохранение...' : 'Сохранить',
+                              ),
                               style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size(0, AppSizes.buttonHeight)),
+                                minimumSize: const Size(
+                                  0,
+                                  AppSizes.buttonHeight,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: AppSizes.sm),
@@ -251,16 +282,19 @@ class _EditProjectPageState extends State<EditProjectPage> {
                               onPressed: _confirmDelete,
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.error,
-                                side: const BorderSide(
-                                    color: AppColors.error),
-                                minimumSize:
-                                    const Size(0, AppSizes.buttonHeight),
+                                side: const BorderSide(color: AppColors.error),
+                                minimumSize: const Size(
+                                  0,
+                                  AppSizes.buttonHeight,
+                                ),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSizes.md),
+                                  horizontal: AppSizes.md,
+                                ),
                               ),
                               icon: const Icon(
-                                  Icons.delete_outline_rounded,
-                                  size: 18),
+                                Icons.delete_outline_rounded,
+                                size: 18,
+                              ),
                               label: const Text('Удалить'),
                             ),
                           ),
@@ -284,15 +318,21 @@ class _EditProjectPageState extends State<EditProjectPage> {
     setState(() => _isSaving = true);
     await Future.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
-    setState(() { _isSaving = false; _hasChanges = false; });
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text('Проект обновлён ✓'),
-      backgroundColor: AppColors.success,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-      margin: const EdgeInsets.all(AppSizes.md),
-    ));
+    setState(() {
+      _isSaving = false;
+      _hasChanges = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Проект обновлён ✓'),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        ),
+        margin: const EdgeInsets.all(AppSizes.md),
+      ),
+    );
     if (_step == 0) {
       setState(() => _step = 1);
     } else {
@@ -300,32 +340,43 @@ class _EditProjectPageState extends State<EditProjectPage> {
     }
   }
 
-  Future<void> _pickDeadline() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _deadline ?? DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme:
-              const ColorScheme.light(primary: AppColors.primary),
-        ),
-        child: child!,
+Future<void> _pickDeadline() async {
+  final today = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
+
+  final picked = await showDatePicker(
+    context: context,
+    initialDate: _deadline ?? today.add(const Duration(days: 30)),
+    firstDate: today,
+    lastDate: today.add(const Duration(days: 365)),
+    builder: (ctx, child) => Theme(
+      data: Theme.of(ctx).copyWith(
+        colorScheme: const ColorScheme.light(primary: AppColors.primary),
       ),
-    );
-    if (picked != null) setState(() { _deadline = picked; _hasChanges = true; });
-  }
+      child: child!,
+    ),
+  );
+  if (picked != null)
+    setState(() {
+      _deadline = picked;
+      _hasChanges = true;
+    });
+}
 
   void _confirmDelete() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusLg)),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        ),
         title: const Text('Удалить проект?'),
         content: const Text(
-            'Это действие нельзя отменить.\nВсе заявки также будут удалены.'),
+          'Это действие нельзя отменить.\nВсе заявки также будут удалены.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -335,16 +386,18 @@ class _EditProjectPageState extends State<EditProjectPage> {
             onPressed: () {
               Navigator.pop(context);
               context.go('/profile');
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: const Text('Проект удалён'),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-                margin: const EdgeInsets.all(AppSizes.md),
-              ));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Проект удалён'),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  ),
+                  margin: const EdgeInsets.all(AppSizes.md),
+                ),
+              );
             },
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Удалить'),
           ),
         ],
@@ -357,7 +410,8 @@ class _EditProjectPageState extends State<EditProjectPage> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusLg)),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        ),
         title: const Text('Отменить изменения?'),
         content: const Text('Несохранённые изменения будут потеряны.'),
         actions: [
@@ -370,8 +424,7 @@ class _EditProjectPageState extends State<EditProjectPage> {
               Navigator.pop(context);
               context.pop();
             },
-            child: Text('Выйти',
-                style: TextStyle(color: AppColors.error)),
+            child: Text('Выйти', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -469,11 +522,13 @@ class _EditStep2 extends StatelessWidget {
           spacing: 6,
           runSpacing: 6,
           children: availableSkills
-              .map((s) => SkillChip(
-                    label: s,
-                    isSelected: selectedSkills.contains(s),
-                    onTap: () => onSkillToggle(s),
-                  ))
+              .map(
+                (s) => SkillChip(
+                  label: s,
+                  isSelected: selectedSkills.contains(s),
+                  onTap: () => onSkillToggle(s),
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: AppSizes.md),
@@ -494,8 +549,11 @@ class _EditStep2 extends StatelessWidget {
                 color: AppColors.primary,
               ),
               Expanded(
-                child: Text('$slots чел.',
-                    textAlign: TextAlign.center, style: AppTypography.h3),
+                child: Text(
+                  '$slots чел.',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.h3,
+                ),
               ),
               IconButton(
                 onPressed: onSlotsIncrement,
@@ -513,7 +571,9 @@ class _EditStep2 extends StatelessWidget {
           onTap: onDeadlineTap,
           child: Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.md, vertical: 14),
+              horizontal: AppSizes.md,
+              vertical: 14,
+            ),
             decoration: BoxDecoration(
               color: AppColors.primarySurface,
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -525,11 +585,11 @@ class _EditStep2 extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.calendar_today_rounded,
-                    size: 18,
-                    color: deadline != null
-                        ? AppColors.primary
-                        : AppColors.grey),
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 18,
+                  color: deadline != null ? AppColors.primary : AppColors.grey,
+                ),
                 const SizedBox(width: AppSizes.sm),
                 Text(
                   deadline != null
@@ -567,7 +627,7 @@ class _EditStep2 extends StatelessWidget {
                 displayMap: {
                   'junior': 'Junior',
                   'middle': 'Middle',
-                  'senior': 'Senior'
+                  'senior': 'Senior',
                 },
                 onChanged: onLevelChanged,
               ),
@@ -607,19 +667,22 @@ class _Dropdown extends StatelessWidget {
           decoration: InputDecoration(
             filled: true,
             fillColor: AppColors.primarySurface,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
               borderSide: BorderSide.none,
             ),
           ),
           items: items
-              .map((i) => DropdownMenuItem(
-                    value: i,
-                    child: Text(displayMap?[i] ?? i,
-                        style: AppTypography.body),
-                  ))
+              .map(
+                (i) => DropdownMenuItem(
+                  value: i,
+                  child: Text(displayMap?[i] ?? i, style: AppTypography.body),
+                ),
+              )
               .toList(),
           onChanged: (v) => onChanged(v!),
         ),

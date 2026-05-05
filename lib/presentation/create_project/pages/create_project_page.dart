@@ -45,16 +45,15 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
   final Set<String> _selectedSkillIds = {};
   int _slots = 3;
   DateTime? _deadline;
-  String _formatId = 'online';   // id из справочника
-  String _levelId = 'junior';    // id из справочника
-  String _categoryId = 'dev';    // id из справочника
+  String _formatId = 'online'; // id из справочника
+  String _levelId = 'junior'; // id из справочника
+  String _categoryId = 'dev'; // id из справочника
 
   bool get _step1Valid =>
       _titleController.text.trim().isNotEmpty &&
       _shortDescController.text.trim().isNotEmpty;
 
-  bool get _step2Valid =>
-      _selectedSkillIds.isNotEmpty && _deadline != null;
+  bool get _step2Valid => _selectedSkillIds.isNotEmpty && _deadline != null;
 
   @override
   void initState() {
@@ -85,14 +84,17 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
         if (state.status == CreateProjectStatus.success) {
           _showSuccess(context);
         } else if (state.status == CreateProjectStatus.error) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(state.errorMessage ?? 'Ошибка публикации'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-            margin: const EdgeInsets.all(AppSizes.md),
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage ?? 'Ошибка публикации'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+              ),
+              margin: const EdgeInsets.all(AppSizes.md),
+            ),
+          );
         }
       },
       child: BlocBuilder<CreateProjectBloc, CreateProjectState>(
@@ -108,12 +110,16 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                   Container(
                     color: AppColors.white,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppSizes.sm, vertical: AppSizes.xs),
+                      horizontal: AppSizes.sm,
+                      vertical: AppSizes.xs,
+                    ),
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_rounded,
-                              size: 20),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_rounded,
+                            size: 20,
+                          ),
                           onPressed: () {
                             if (_step > 0) {
                               setState(() => _step--);
@@ -123,19 +129,24 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                           },
                         ),
                         Expanded(
-                          child:
-                              Text('Новый проект', style: AppTypography.h3),
+                          child: Text('Новый проект', style: AppTypography.h3),
                         ),
                         if (_autosaved)
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.cloud_done_rounded,
-                                  size: 14, color: AppColors.success),
+                              const Icon(
+                                Icons.cloud_done_rounded,
+                                size: 14,
+                                color: AppColors.success,
+                              ),
                               const SizedBox(width: 3),
-                              Text('Автосохранение',
-                                  style: AppTypography.caption
-                                      .copyWith(color: AppColors.success)),
+                              Text(
+                                'Автосохранение',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.success,
+                                ),
+                              ),
                               const SizedBox(width: AppSizes.sm),
                             ],
                           ),
@@ -147,7 +158,11 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                   Container(
                     color: AppColors.white,
                     padding: const EdgeInsets.fromLTRB(
-                        AppSizes.md, 0, AppSizes.md, AppSizes.md),
+                      AppSizes.md,
+                      0,
+                      AppSizes.md,
+                      AppSizes.md,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -160,15 +175,15 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                           children: [0, 1].map((i) {
                             return Expanded(
                               child: Container(
-                                margin:
-                                    EdgeInsets.only(right: i == 0 ? 6 : 0),
+                                margin: EdgeInsets.only(right: i == 0 ? 6 : 0),
                                 height: 4,
                                 decoration: BoxDecoration(
                                   color: i <= _step
                                       ? AppColors.primary
                                       : AppColors.lightGrey,
                                   borderRadius: BorderRadius.circular(
-                                      AppSizes.radiusFull),
+                                    AppSizes.radiusFull,
+                                  ),
                                 ),
                               ),
                             );
@@ -205,7 +220,8 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                                       : _selectedSkillIds.add(id);
                                 }),
                                 onSlotsDecrement: () => setState(
-                                    () => _slots = (_slots - 1).clamp(1, 50)),
+                                  () => _slots = (_slots - 1).clamp(1, 50),
+                                ),
                                 onSlotsIncrement: () =>
                                     setState(() => _slots++),
                                 onFormatChanged: (v) =>
@@ -232,21 +248,19 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                       color: AppColors.white,
                       boxShadow: [
                         BoxShadow(
-                            color: AppColors.dark.withOpacity(0.06),
-                            blurRadius: 12,
-                            offset: const Offset(0, -3))
+                          color: AppColors.dark.withOpacity(0.06),
+                          blurRadius: 12,
+                          offset: const Offset(0, -3),
+                        ),
                       ],
                     ),
                     child: PrimaryButton(
-                      label:
-                          _step == 0 ? 'Далее' : 'Опубликовать проект',
+                      label: _step == 0 ? 'Далее' : 'Опубликовать проект',
                       icon: _step == 0
                           ? Icons.arrow_forward_rounded
                           : Icons.rocket_launch_rounded,
                       isLoading: isLoading,
-                      onTap: _step == 0
-                          ? _nextStep
-                          : () => _publish(context),
+                      onTap: _step == 0 ? _nextStep : () => _publish(context),
                     ),
                   ),
                 ],
@@ -260,14 +274,17 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
 
   void _nextStep() {
     if (!_step1Valid) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Заполни название и краткое описание'),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-        margin: const EdgeInsets.all(AppSizes.md),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Заполни название и краткое описание'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          ),
+          margin: const EdgeInsets.all(AppSizes.md),
+        ),
+      );
       return;
     }
     setState(() => _step = 1);
@@ -275,57 +292,69 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
 
   void _publish(BuildContext context) {
     if (!_step2Valid) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Выбери навыки и дедлайн'),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-        margin: const EdgeInsets.all(AppSizes.md),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Выбери навыки и дедлайн'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          ),
+          margin: const EdgeInsets.all(AppSizes.md),
+        ),
+      );
       return;
     }
 
     final d = _deadline!;
 
     // Конвертируем id → Firestore значения
-    final fsFormat   = AppFormats.toFirestore(_formatId) ?? _formatId;
-    final fsLevel    = AppLevels.toFirestore(_levelId) ?? _levelId;
+    final fsFormat = AppFormats.toFirestore(_formatId) ?? _formatId;
+    final fsLevel = AppLevels.toFirestore(_levelId) ?? _levelId;
     final fsCategory = AppCategories.toFirestore(_categoryId) ?? _categoryId;
 
     // Получаем label навыков из id
     final skillLabels = _selectedSkillIds
-        .map((id) => AppSkills.all
-            .firstWhere((s) => s.id == id,
-                orElse: () => SkillItem(id: id, label: id, categoryId: ''))
-            .label)
+        .map(
+          (id) => AppSkills.all
+              .firstWhere(
+                (s) => s.id == id,
+                orElse: () => SkillItem(id: id, label: id, categoryId: ''),
+              )
+              .label,
+        )
         .toList();
 
     context.read<CreateProjectBloc>().add(
-          CreateProjectPublished(
-            title: _titleController.text.trim(),
-            shortDescription: _shortDescController.text.trim(),
-            fullDescription: _fullDescController.text.trim(),
-            skills: skillLabels,
-            slots: _slots,
-            deadline: '${d.day}.${d.month}.${d.year}',
-            format: fsFormat,
-            level: fsLevel,
-            category: fsCategory,
-          ),
-        );
+      CreateProjectPublished(
+        title: _titleController.text.trim(),
+        shortDescription: _shortDescController.text.trim(),
+        fullDescription: _fullDescController.text.trim(),
+        skills: skillLabels,
+        slots: _slots,
+        deadline: '${d.day}.${d.month}.${d.year}',
+        format: fsFormat,
+        level: fsLevel,
+        category: fsCategory,
+      ),
+    );
   }
 
+  // ✅ ИСПРАВЛЕНО: прошедшие дни теперь недоступны
   Future<void> _pickDeadline() async {
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: today.add(const Duration(days: 30)),
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme:
-              const ColorScheme.light(primary: AppColors.primary),
+          colorScheme: const ColorScheme.light(primary: AppColors.primary),
         ),
         child: child!,
       ),
@@ -339,7 +368,8 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusLg)),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -347,13 +377,21 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
               width: 72,
               height: 72,
               decoration: const BoxDecoration(
-                  color: Color(0xFFE8F5E9), shape: BoxShape.circle),
-              child: const Icon(Icons.rocket_launch_rounded,
-                  color: AppColors.success, size: 36),
+                color: Color(0xFFE8F5E9),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.rocket_launch_rounded,
+                color: AppColors.success,
+                size: 36,
+              ),
             ),
             const SizedBox(height: AppSizes.md),
-            Text('Проект опубликован! 🚀',
-                style: AppTypography.h3, textAlign: TextAlign.center),
+            Text(
+              'Проект опубликован! 🚀',
+              style: AppTypography.h3,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: AppSizes.xs),
             Text(
               'Твой проект теперь виден в ленте',
@@ -428,8 +466,7 @@ class _Step1State extends State<_Step1> {
           hint: 'Название проекта',
           label: 'Название проекта',
           controller: widget.titleController,
-          validator: (v) =>
-              v == null || v.isEmpty ? 'Обязательное поле' : null,
+          validator: (v) => v == null || v.isEmpty ? 'Обязательное поле' : null,
         ),
         const SizedBox(height: AppSizes.md),
 
@@ -484,14 +521,18 @@ class _Step1State extends State<_Step1> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.lightbulb_outline_rounded,
-                  color: AppColors.primary, size: 18),
+              const Icon(
+                Icons.lightbulb_outline_rounded,
+                color: AppColors.primary,
+                size: 18,
+              ),
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(
                   'Хорошее описание повышает шансы найти команду. Расскажи о целях и стеке.',
-                  style: AppTypography.body
-                      .copyWith(color: AppColors.primaryDark),
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.primaryDark,
+                  ),
                 ),
               ),
             ],
@@ -564,8 +605,7 @@ class _Step2State extends State<_Step2> {
             if (widget.selectedSkillIds.isNotEmpty)
               Text(
                 '${widget.selectedSkillIds.length} выбрано',
-                style: AppTypography.caption
-                    .copyWith(color: AppColors.primary),
+                style: AppTypography.caption.copyWith(color: AppColors.primary),
               ),
           ],
         ),
@@ -586,26 +626,21 @@ class _Step2State extends State<_Step2> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: isActive
-                        ? AppColors.primary
-                        : AppColors.background,
-                    borderRadius:
-                        BorderRadius.circular(AppSizes.radiusFull),
+                    color: isActive ? AppColors.primary : AppColors.background,
+                    borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                     border: Border.all(
-                      color: isActive
-                          ? AppColors.primary
-                          : AppColors.lightGrey,
+                      color: isActive ? AppColors.primary : AppColors.lightGrey,
                     ),
                   ),
                   child: Text(
                     cat.label,
                     style: AppTypography.caption.copyWith(
                       color: isActive ? Colors.white : AppColors.dark,
-                      fontWeight: isActive
-                          ? FontWeight.w600
-                          : FontWeight.w400,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),
                 ),
@@ -619,11 +654,13 @@ class _Step2State extends State<_Step2> {
           spacing: 6,
           runSpacing: 6,
           children: skills
-              .map((s) => SkillChip(
-                    label: s.label,
-                    isSelected: widget.selectedSkillIds.contains(s.id),
-                    onTap: () => widget.onSkillToggle(s.id),
-                  ))
+              .map(
+                (s) => SkillChip(
+                  label: s.label,
+                  isSelected: widget.selectedSkillIds.contains(s.id),
+                  onTap: () => widget.onSkillToggle(s.id),
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: AppSizes.md),
@@ -680,7 +717,9 @@ class _Step2State extends State<_Step2> {
           onTap: widget.onDeadlineTap,
           child: Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.md, vertical: 14),
+              horizontal: AppSizes.md,
+              vertical: 14,
+            ),
             decoration: BoxDecoration(
               color: AppColors.primarySurface,
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -692,11 +731,13 @@ class _Step2State extends State<_Step2> {
             ),
             child: Row(
               children: [
-                Icon(Icons.calendar_today_rounded,
-                    size: 18,
-                    color: widget.deadline != null
-                        ? AppColors.primary
-                        : AppColors.grey),
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 18,
+                  color: widget.deadline != null
+                      ? AppColors.primary
+                      : AppColors.grey,
+                ),
                 const SizedBox(width: AppSizes.sm),
                 Text(
                   widget.deadline != null
@@ -713,8 +754,11 @@ class _Step2State extends State<_Step2> {
                 ),
                 if (widget.deadline != null) ...[
                   const Spacer(),
-                  const Icon(Icons.check_circle_rounded,
-                      size: 16, color: AppColors.success),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 16,
+                    color: AppColors.success,
+                  ),
                 ],
               ],
             ),
@@ -797,18 +841,22 @@ class _ReferenceDropdown<T> extends StatelessWidget {
       decoration: InputDecoration(
         filled: true,
         fillColor: AppColors.primarySurface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusMd),
           borderSide: BorderSide.none,
         ),
       ),
       items: items
-          .map((item) => DropdownMenuItem(
-                value: getId(item),
-                child: Text(getLabel(item), style: AppTypography.body),
-              ))
+          .map(
+            (item) => DropdownMenuItem(
+              value: getId(item),
+              child: Text(getLabel(item), style: AppTypography.body),
+            ),
+          )
           .toList(),
       onChanged: (v) => onChanged(v!),
     );

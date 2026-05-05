@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -22,6 +23,9 @@ class _SplashPageState extends State<SplashPage>
   @override
   void initState() {
     super.initState();
+
+    // ← Убираем нативный splash — теперь показывается наш SplashPage
+    FlutterNativeSplash.remove();
 
     _controller = AnimationController(
       vsync: this,
