@@ -83,9 +83,9 @@ class _ProfilePageState extends State<ProfilePage>
                 labelColor: AppColors.primary,
                 unselectedLabelColor: AppColors.grey,
                 indicatorColor: AppColors.primary,
-                tabs: const [
-                  Tab(text: 'Мои проекты'),
-                  Tab(text: 'Мои заявки'),
+                tabs: [
+                  Tab(text: 'Мои проекты (${projects.length})'),
+                  const Tab(text: 'Мои заявки'),
                 ],
               ),
             ),
@@ -148,10 +148,6 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: AppSizes.md),
-          Row(
-            children: [_StatBadge(value: '$projectsCount', label: 'Проектов')],
           ),
           const SizedBox(height: AppSizes.md),
           if (user.skills.isNotEmpty)
@@ -222,24 +218,66 @@ class _MyProjectsTab extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(AppSizes.md),
-      itemCount: projects.length,
-      itemBuilder: (context, i) {
-        final project = projects[i];
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('applications')
+          .where('status', isEqualTo: 'pending')
+          .snapshots(),
+      builder: (context, snapshot) {
+        final Map<String, int> pendingCounts = {};
 
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => _OwnerProjectPage(project: project),
+        if (snapshot.hasData) {
+          for (final doc in snapshot.data!.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final projectId = data['projectId'];
+
+            if (projectId is String) {
+              pendingCounts[projectId] = (pendingCounts[projectId] ?? 0) + 1;
+            }
+          }
+        }
+
+        final originalIndex = {
+          for (int i = 0; i < projects.length; i++) projects[i].id: i,
+        };
+
+        final sortedProjects = [...projects];
+
+        sortedProjects.sort((a, b) {
+          final aCount = pendingCounts[a.id] ?? 0;
+          final bCount = pendingCounts[b.id] ?? 0;
+
+          if (aCount != bCount) {
+            return bCount.compareTo(aCount);
+          }
+
+          return originalIndex[a.id]!.compareTo(originalIndex[b.id]!);
+        });
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(AppSizes.md),
+          itemCount: sortedProjects.length,
+          itemBuilder: (context, i) {
+            final project = sortedProjects[i];
+            final pendingCount = pendingCounts[project.id] ?? 0;
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => _OwnerProjectPage(project: project),
+                  ),
+                );
+              },
+              child: AbsorbPointer(
+                child: _ProjectCardWithApplicationDot(
+                  project: project,
+                  pendingCount: pendingCount,
+                ),
               ),
             );
           },
-          child: AbsorbPointer(
-            child: _ProjectCardWithApplicationDot(project: project),
-          ),
         );
       },
     );
@@ -803,52 +841,48 @@ class _InfoRow extends StatelessWidget {
 
 class _ProjectCardWithApplicationDot extends StatelessWidget {
   final ProjectEntity project;
+  final int pendingCount;
 
-  const _ProjectCardWithApplicationDot({required this.project});
+  const _ProjectCardWithApplicationDot({
+    required this.project,
+    required this.pendingCount,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('applications')
-          .where('projectId', isEqualTo: project.id)
-          .where('status', isEqualTo: 'pending')
-          .snapshots(),
-      builder: (context, snapshot) {
-        final hasNewApplications =
-            snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+    return Stack(
+      children: [
+        ProjectCard(project: project),
 
-        return Stack(
-          children: [
-            ProjectCard(project: project),
-
-            if (hasNewApplications)
-              Positioned(
-                top: 14,
-                right: 14,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 171, 255, 180),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color.fromARGB(255, 171, 255, 180),
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.error.withOpacity(0.4),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+        if (pendingCount > 0)
+          Positioned(
+            top: 12,
+            right: 12,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 7),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.primaryDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+                border: Border.all(color: AppColors.white, width: 2),
+              ),
+              child: Center(
+                child: Text(
+                  pendingCount > 99 ? '99+' : '$pendingCount',
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
-          ],
-        );
-      },
+            ),
+          ),
+      ],
     );
   }
 }

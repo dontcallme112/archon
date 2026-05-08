@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -48,7 +51,8 @@ class SettingsPage extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                  final data =
+                      snapshot.data!.data() as Map<String, dynamic>? ?? {};
 
                   final name = data['name'] ?? '';
                   final telegram = data['telegram'] ?? '';
@@ -72,6 +76,22 @@ class SettingsPage extends StatelessWidget {
                         _SettingsGroup(
                           children: [
                             _SettingsTile(
+                              icon: Icons.image_outlined,
+                              iconColor: AppColors.primary,
+                              label: 'Изменить аватарку',
+                              showArrow: true,
+                              onTap: () => _changeAvatar(context),
+                            ),
+                            const Divider(height: 1),
+                            _SettingsTile(
+                              icon: Icons.edit_outlined,
+                              iconColor: AppColors.primary,
+                              label: 'Редактировать описание',
+                              showArrow: true,
+                              onTap: () => _editBio(context),
+                            ),
+                            const Divider(height: 1),
+                            _SettingsTile(
                               icon: Icons.lock_outline_rounded,
                               iconColor: AppColors.primary,
                               label: 'Сменить пароль',
@@ -83,7 +103,9 @@ class SettingsPage extends StatelessWidget {
                                 if (email == null || email.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Email пользователя не найден'),
+                                      content: Text(
+                                        'Email пользователя не найден',
+                                      ),
                                     ),
                                   );
                                   return;
@@ -103,7 +125,6 @@ class SettingsPage extends StatelessWidget {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: AppSizes.lg),
 
                         _SettingsGroup(
@@ -114,6 +135,14 @@ class SettingsPage extends StatelessWidget {
                               label: 'Выйти из аккаунта',
                               labelColor: AppColors.error,
                               onTap: () => _confirmLogout(context),
+                            ),
+                            const Divider(height: 1),
+                            _SettingsTile(
+                              icon: Icons.delete_forever_outlined,
+                              iconColor: AppColors.error,
+                              label: 'Удалить аккаунт',
+                              labelColor: AppColors.error,
+                              onTap: () => _confirmDeleteAccount(context),
                             ),
                           ],
                         ),
@@ -156,6 +185,152 @@ class SettingsPage extends StatelessWidget {
       ),
     );
   }
+
+  void _confirmDeleteAccount(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        ),
+        title: const Text('Удалить аккаунт?'),
+        content: const Text(
+          'Ваш аккаунт и данные профиля будут удалены. Это действие нельзя отменить.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null) return;
+
+                Navigator.pop(context);
+
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .delete();
+
+                await user.delete();
+
+                context.go('/onboarding');
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Ошибка удаления аккаунта. Возможно, нужно заново войти в аккаунт.',
+                    ),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+  }
+  Future<void> _changeAvatar(BuildContext context) async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 75,
+    );
+
+    if (picked == null) return;
+
+    final file = File(picked.path);
+
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('avatars')
+        .child('${user.uid}.jpg');
+
+    await ref.putFile(file);
+
+    final url = await ref.getDownloadURL();
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'avatar_url': url,
+    });
+
+    await user.updatePhotoURL(url);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Аватарка обновлена')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Ошибка загрузки аватарки: $e'),
+        backgroundColor: AppColors.error,
+      ),
+    );
+    }
+  }
+
+  void _editBio(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final data = doc.data() ?? {};
+    final controller = TextEditingController(text: data['bio'] ?? '');
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        ),
+        title: const Text('Редактировать описание'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: 'Напишите пару слов о себе',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .update({'bio': controller.text.trim()});
+
+              Navigator.pop(context);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Описание обновлено')),
+              );
+
+              context.pop();
+            },
+            child: const Text('Сохранить'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _UserPreviewCard extends StatelessWidget {
@@ -172,7 +347,9 @@ class _UserPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayName = name.isNotEmpty ? name : 'Пользователь';
-    final displayTelegram = telegram.isNotEmpty ? telegram : 'Telegram не указан';
+    final displayTelegram = telegram.isNotEmpty
+        ? telegram
+        : 'Telegram не указан';
     final displayLevel = level.isNotEmpty ? level : 'junior';
 
     return Container(
@@ -187,11 +364,7 @@ class _UserPreviewCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          AppAvatar(
-            name: displayName,
-            imageUrl: null,
-            size: 52,
-          ),
+          AppAvatar(name: displayName, imageUrl: null, size: 52),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
