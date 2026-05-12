@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:student_app/core/reference/app_reference_data.dart';
 import 'package:student_app/core/utils/result.dart';
 import 'package:student_app/domain/usecases/project/project_usecases.dart';
 import '../../../domain/entities/entities.dart';
@@ -8,6 +9,7 @@ part 'feed_event.dart';
 part 'feed_state.dart';
 
 const int _kPageSize = 10;
+const int _kSkillLimitPerCategory = 5;
 
 class FeedBloc extends Bloc<FeedEvent, FeedState> {
   final GetFeedProjectsUseCase _getFeedProjects;
@@ -53,11 +55,35 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
     Emitter<FeedState> emit,
   ) async {
     final skills = Set<String>.from(state.activeSkills);
+
     if (skills.contains(event.skillId)) {
+      // Убираем — всегда разрешено
       skills.remove(event.skillId);
     } else {
+      // Находим категорию выбранного навыка
+      final skillCategory = AppSkills.all
+          .firstWhere(
+            (s) => s.id == event.skillId,
+            orElse: () => SkillItem(id: '', label: '', categoryId: ''),
+          )
+          .categoryId;
+
+      // Считаем сколько навыков из этой категории уже выбрано
+      final countInCategory = skills.where((id) {
+        return AppSkills.all
+                .firstWhere(
+                  (s) => s.id == id,
+                  orElse: () => SkillItem(id: '', label: '', categoryId: ''),
+                )
+                .categoryId ==
+            skillCategory;
+      }).length;
+
+      // Лимит 5 навыков на категорию — не добавляем если превышен
+      if (countInCategory >= _kSkillLimitPerCategory) return;
       skills.add(event.skillId);
     }
+
     emit(state.copyWith(activeSkills: skills, status: FeedStatus.loading));
     await _loadProjects(emit, reset: true);
   }

@@ -26,7 +26,6 @@ class FirestoreProjectRepository implements ProjectRepository {
 
     Query q = _db.collection('projects').where('isActive', isEqualTo: true);
 
-    // orderBy только без фильтров — иначе нужен составной индекс
     if (!hasFirestoreFilters) {
       q = q.orderBy('createdAt', descending: true);
     }
@@ -37,14 +36,17 @@ class FirestoreProjectRepository implements ProjectRepository {
     final snap = await q.get();
     var projects = snap.docs.map(_fromDoc).toList();
 
-    // Сортируем вручную при фильтрации
     if (hasFirestoreFilters) {
       projects.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
 
-    // Фильтр по навыкам — client-side
-    // Навыки в Firestore хранятся как label ('Flutter', 'React', ...)
-    // Конвертируем id → label для сравнения
+    // Убираем проекты созданные самим пользователем
+    final currentUid = _auth.currentUser?.uid;
+    if (currentUid != null) {
+      projects = projects.where((p) => p.author.id != currentUid).toList();
+    }
+
+    // Фильтр по навыкам
     if (skills != null && skills.isNotEmpty) {
       final skillLabels = skills
           .map(
@@ -58,7 +60,6 @@ class FirestoreProjectRepository implements ProjectRepository {
           .toSet();
 
       projects = projects.where((p) {
-        // Проект подходит если хотя бы один из выбранных навыков совпадает
         return p.requiredSkills.any((s) => skillLabels.contains(s));
       }).toList();
     }

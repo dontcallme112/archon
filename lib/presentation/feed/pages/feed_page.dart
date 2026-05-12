@@ -251,23 +251,44 @@ class _ActiveFiltersRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Чипы активных фильтров
+          // Чипы с крестиками — убирать поштучно
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               ...state.activeSkills.map(
-                (id) => Chip(label: Text(_skillLabel(id))),
+                (id) => Chip(
+                  label: Text(_skillLabel(id),
+                      style: const TextStyle(fontSize: 13, color: AppColors.dark)),
+                  deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.grey),
+                  backgroundColor: AppColors.background,
+                  side: const BorderSide(color: AppColors.lightGrey),
+                  onDeleted: () => bloc.add(FeedSkillToggled(id)),
+                ),
               ),
               if (state.activeFormat != null)
-                Chip(label: Text(_formatLabel(state.activeFormat!))),
+                Chip(
+                  label: Text(_formatLabel(state.activeFormat!),
+                      style: const TextStyle(fontSize: 13, color: AppColors.dark)),
+                  deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.grey),
+                  backgroundColor: AppColors.background,
+                  side: const BorderSide(color: AppColors.lightGrey),
+                  onDeleted: () => bloc.add(FeedFormatChanged(null)),
+                ),
               if (state.activeLevel != null)
-                Chip(label: Text(_levelLabel(state.activeLevel!))),
+                Chip(
+                  label: Text(_levelLabel(state.activeLevel!),
+                      style: const TextStyle(fontSize: 13, color: AppColors.dark)),
+                  deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.grey),
+                  backgroundColor: AppColors.background,
+                  side: const BorderSide(color: AppColors.lightGrey),
+                  onDeleted: () => bloc.add(FeedLevelChanged(null)),
+                ),
             ],
           ),
           const SizedBox(height: 8),
 
-          // Кнопка сброса — всегда внизу отдельно
+          // Кнопка сброса всего
           ActionChip(
             label: const Text(
               'Сбросить фильтры',
@@ -281,7 +302,7 @@ class _ActiveFiltersRow extends StatelessWidget {
       ),
     );
   }
-} // ← закрывающая скобка _ActiveFiltersRow
+}
 
 // ─── Filter bottom sheet ──────────────────────────────────────────────────
 
@@ -293,7 +314,13 @@ class _FilterSheet extends StatefulWidget {
 }
 
 class _FilterSheetState extends State<_FilterSheet> {
-  String _activeCategoryId = AppCategories.all.first.id;
+  static final _categoriesWithSkills = AppCategories.all
+      .where((cat) => AppSkills.byCategory(cat.id).isNotEmpty)
+      .toList();
+
+  String _activeCategoryId = AppCategories.all
+      .firstWhere((cat) => AppSkills.byCategory(cat.id).isNotEmpty)
+      .id;
 
   @override
   Widget build(BuildContext context) {
@@ -301,6 +328,12 @@ class _FilterSheetState extends State<_FilterSheet> {
       builder: (context, state) {
         final bloc = context.read<FeedBloc>();
         final skills = AppSkills.byCategory(_activeCategoryId);
+
+        // Считаем выбрано навыков в текущей категории
+        final selectedInCategory = skills
+            .where((s) => state.activeSkills.contains(s.id))
+            .length;
+        final limitReached = selectedInCategory >= 5;
 
         return DraggableScrollableSheet(
           initialChildSize: 0.85,
@@ -328,6 +361,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                     child: ListView(
                       controller: scrollController,
                       children: [
+                        // ── Формат ──
                         Text('Формат', style: AppTypography.label),
                         const SizedBox(height: 8),
                         Wrap(
@@ -351,6 +385,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                         ),
                         const SizedBox(height: 16),
 
+                        // ── Уровень ──
                         Text('Уровень', style: AppTypography.label),
                         const SizedBox(height: 8),
                         Wrap(
@@ -366,13 +401,15 @@ class _FilterSheetState extends State<_FilterSheet> {
                               (lvl) => _FilterChip(
                                 label: lvl.label,
                                 selected: state.activeLevel == lvl.id,
-                                onTap: () => bloc.add(FeedLevelChanged(lvl.id)),
+                                onTap: () =>
+                                    bloc.add(FeedLevelChanged(lvl.id)),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
 
+                        // ── Навыки ──
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -389,21 +426,28 @@ class _FilterSheetState extends State<_FilterSheet> {
                               ),
                           ],
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'До 5 навыков в каждой категории',
+                          style: AppTypography.caption
+                              .copyWith(color: AppColors.grey),
+                        ),
                         const SizedBox(height: 8),
 
+                        // Категории навыков
                         SizedBox(
                           height: 36,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
-                            itemCount: AppCategories.all.length,
+                            itemCount: _categoriesWithSkills.length,
                             separatorBuilder: (_, __) =>
                                 const SizedBox(width: 8),
                             itemBuilder: (_, i) {
-                              final cat = AppCategories.all[i];
+                              final cat = _categoriesWithSkills[i];
                               final isActive = cat.id == _activeCategoryId;
                               return GestureDetector(
-                                onTap: () =>
-                                    setState(() => _activeCategoryId = cat.id),
+                                onTap: () => setState(
+                                    () => _activeCategoryId = cat.id),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 150),
                                   padding: const EdgeInsets.symmetric(
@@ -415,8 +459,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                                         ? AppColors.primary
                                         : AppColors.background,
                                     borderRadius: BorderRadius.circular(
-                                      AppSizes.radiusFull,
-                                    ),
+                                        AppSizes.radiusFull),
                                     border: Border.all(
                                       color: isActive
                                           ? AppColors.primary
@@ -441,17 +484,35 @@ class _FilterSheetState extends State<_FilterSheet> {
                         ),
                         const SizedBox(height: 12),
 
+                        // Навыки — если лимит достигнут показываем подсказку
+                        if (limitReached)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'Лимит 5 навыков в этой категории достигнут',
+                              style: AppTypography.caption
+                                  .copyWith(color: AppColors.error),
+                            ),
+                          ),
+
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: skills
-                              .map(
-                                (s) => _FilterChip(
+                              .map((s) {
+                                final isSelected =
+                                    state.activeSkills.contains(s.id);
+                                final isDisabled =
+                                    limitReached && !isSelected;
+                                return _FilterChip(
                                   label: s.label,
-                                  selected: state.activeSkills.contains(s.id),
-                                  onTap: () => bloc.add(FeedSkillToggled(s.id)),
-                                ),
-                              )
+                                  selected: isSelected,
+                                  disabled: isDisabled,
+                                  onTap: isDisabled
+                                      ? () {}
+                                      : () => bloc.add(FeedSkillToggled(s.id)),
+                                );
+                              })
                               .toList(),
                         ),
                         const SizedBox(height: 20),
@@ -473,12 +534,14 @@ class _FilterSheetState extends State<_FilterSheet> {
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool selected;
+  final bool disabled;
   final VoidCallback onTap;
 
   const _FilterChip({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.disabled = false,
   });
 
   @override
@@ -488,17 +551,25 @@ class _FilterChip extends StatelessWidget {
         label,
         style: TextStyle(
           fontSize: 13,
-          color: selected ? Colors.white : AppColors.dark,
+          color: disabled
+              ? AppColors.grey
+              : selected
+                  ? Colors.white
+                  : AppColors.dark,
         ),
       ),
       selected: selected,
       selectedColor: AppColors.primary,
-      backgroundColor: AppColors.background,
+      backgroundColor: disabled ? AppColors.lightGrey : AppColors.background,
       side: BorderSide(
-        color: selected ? AppColors.primary : AppColors.grey,
+        color: disabled
+            ? AppColors.lightGrey
+            : selected
+                ? AppColors.primary
+                : AppColors.grey,
         width: 1,
       ),
-      onSelected: (_) => onTap(),
+      onSelected: disabled ? null : (_) => onTap(),
     );
   }
 }
@@ -583,6 +654,7 @@ class _HeroSection extends StatelessWidget {
     );
   }
 }
+
 // ─── Empty state ──────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
