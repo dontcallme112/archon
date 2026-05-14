@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_typography.dart';
@@ -78,7 +79,7 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
-  final List<TextInputFormatter>? inputFormatters; // ← опциональный
+  final List<TextInputFormatter>? inputFormatters;
 
   const AppTextField({
     super.key,
@@ -90,7 +91,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.prefixIcon,
     this.suffixIcon,
-    this.inputFormatters, // ← опциональный, без required
+    this.inputFormatters,
   });
 
   @override
@@ -107,7 +108,7 @@ class AppTextField extends StatelessWidget {
           maxLines: maxLines,
           keyboardType: keyboardType,
           validator: validator,
-          inputFormatters: inputFormatters, // ← передаём в TextFormField
+          inputFormatters: inputFormatters,
           style: AppTypography.body,
           decoration: InputDecoration(
             hintText: hint,
@@ -250,6 +251,22 @@ class DeadlineBadge extends StatelessWidget {
 
   const DeadlineBadge({super.key, required this.deadline});
 
+  /// Парсим строку "20.6.2026" → DateTime → "20 июня 2026 г."
+  String _formatDeadline(String raw) {
+    try {
+      final parts = raw.split('.');
+      if (parts.length != 3) return raw;
+      final dt = DateTime(
+        int.parse(parts[2]),
+        int.parse(parts[1]),
+        int.parse(parts[0]),
+      );
+      return DateFormat('d MMMM yyyy г.', 'ru').format(dt);
+    } catch (_) {
+      return raw;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -258,7 +275,10 @@ class DeadlineBadge extends StatelessWidget {
         const Icon(Icons.calendar_today_rounded,
             size: 13, color: AppColors.grey),
         const SizedBox(width: 4),
-        Text('Дедлайн: $deadline', style: AppTypography.caption),
+        Text(
+          'Дедлайн: ${_formatDeadline(deadline)}',
+          style: AppTypography.caption,
+        ),
       ],
     );
   }

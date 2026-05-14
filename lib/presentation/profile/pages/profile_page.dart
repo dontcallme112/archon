@@ -186,22 +186,15 @@ class _MyProjectsTab extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.folder_open_rounded,
-                size: 64,
-                color: AppColors.lightGrey,
-              ),
+              const Icon(Icons.folder_open_rounded,
+                  size: 64, color: AppColors.lightGrey),
               const SizedBox(height: AppSizes.md),
-              Text(
-                'Нет проектов',
-                style: AppTypography.h3.copyWith(color: AppColors.grey),
-              ),
+              Text('Нет проектов',
+                  style: AppTypography.h3.copyWith(color: AppColors.grey)),
               const SizedBox(height: AppSizes.sm),
-              Text(
-                'Создай первый проект',
-                style: AppTypography.body.copyWith(color: AppColors.grey),
-                textAlign: TextAlign.center,
-              ),
+              Text('Создай первый проект',
+                  style: AppTypography.body.copyWith(color: AppColors.grey),
+                  textAlign: TextAlign.center),
               const SizedBox(height: AppSizes.lg),
               SizedBox(
                 width: 230,
@@ -230,7 +223,6 @@ class _MyProjectsTab extends StatelessWidget {
           for (final doc in snapshot.data!.docs) {
             final data = doc.data() as Map<String, dynamic>;
             final projectId = data['projectId'];
-
             if (projectId is String) {
               pendingCounts[projectId] = (pendingCounts[projectId] ?? 0) + 1;
             }
@@ -242,15 +234,10 @@ class _MyProjectsTab extends StatelessWidget {
         };
 
         final sortedProjects = [...projects];
-
         sortedProjects.sort((a, b) {
           final aCount = pendingCounts[a.id] ?? 0;
           final bCount = pendingCounts[b.id] ?? 0;
-
-          if (aCount != bCount) {
-            return bCount.compareTo(aCount);
-          }
-
+          if (aCount != bCount) return bCount.compareTo(aCount);
           return originalIndex[a.id]!.compareTo(originalIndex[b.id]!);
         });
 
@@ -262,14 +249,12 @@ class _MyProjectsTab extends StatelessWidget {
             final pendingCount = pendingCounts[project.id] ?? 0;
 
             return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => _OwnerProjectPage(project: project),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => _OwnerProjectPage(project: project),
+                ),
+              ),
               child: AbsorbPointer(
                 child: _ProjectCardWithApplicationDot(
                   project: project,
@@ -288,7 +273,6 @@ class _MyProjectsTab extends StatelessWidget {
 
 class _OwnerProjectPage extends StatelessWidget {
   final ProjectEntity project;
-
   const _OwnerProjectPage({required this.project});
 
   @override
@@ -299,11 +283,15 @@ class _OwnerProjectPage extends StatelessWidget {
         backgroundColor: AppColors.background,
         appBar: AppBar(
           title: Text(project.title),
+          actions: [
+            IconButton(
+              tooltip: 'Редактировать',
+              icon: const Icon(Icons.edit_rounded),
+              onPressed: () => context.push('/project/${project.id}/edit'),
+            ),
+          ],
           bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Проект'),
-              Tab(text: 'Заявки'),
-            ],
+            tabs: [Tab(text: 'Проект'), Tab(text: 'Заявки')],
           ),
         ),
         body: TabBarView(
@@ -319,7 +307,6 @@ class _OwnerProjectPage extends StatelessWidget {
 
 class _OwnerProjectInfoTab extends StatelessWidget {
   final ProjectEntity project;
-
   const _OwnerProjectInfoTab({required this.project});
 
   @override
@@ -333,10 +320,8 @@ class _OwnerProjectInfoTab extends StatelessWidget {
           const SizedBox(height: AppSizes.md),
           Text('Описание проекта', style: AppTypography.h3),
           const SizedBox(height: AppSizes.sm),
-          Text(
-            project.fullDescription,
-            style: AppTypography.body.copyWith(color: AppColors.darkGrey),
-          ),
+          Text(project.fullDescription,
+              style: AppTypography.body.copyWith(color: AppColors.darkGrey)),
         ],
       ),
     );
@@ -345,7 +330,6 @@ class _OwnerProjectInfoTab extends StatelessWidget {
 
 class _OwnerProjectApplicationsTab extends StatelessWidget {
   final String projectId;
-
   const _OwnerProjectApplicationsTab({required this.projectId});
 
   @override
@@ -359,28 +343,21 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-
         if (snap.hasError) {
           return Center(
-            child: Text(
-              'Ошибка загрузки заявок: ${snap.error}',
-              textAlign: TextAlign.center,
-              style: AppTypography.body.copyWith(color: AppColors.error),
-            ),
+            child: Text('Ошибка загрузки заявок: ${snap.error}',
+                textAlign: TextAlign.center,
+                style: AppTypography.body.copyWith(color: AppColors.error)),
           );
         }
-
         if (!snap.hasData || snap.data!.docs.isEmpty) {
           return Center(
-            child: Text(
-              'Заявок пока нет',
-              style: AppTypography.h3.copyWith(color: AppColors.grey),
-            ),
+            child: Text('Заявок пока нет',
+                style: AppTypography.h3.copyWith(color: AppColors.grey)),
           );
         }
 
         final docs = snap.data!.docs;
-
         return ListView.builder(
           padding: const EdgeInsets.all(AppSizes.md),
           itemCount: docs.length,
@@ -391,15 +368,13 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
             final isPending = status == 'pending';
 
             return InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        _ApplicationDetailsPage(applicationRef: doc.reference),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      _ApplicationDetailsPage(applicationRef: doc.reference),
+                ),
+              ),
               child: Container(
                 margin: const EdgeInsets.only(bottom: AppSizes.md),
                 padding: const EdgeInsets.all(AppSizes.md),
@@ -408,10 +383,9 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppSizes.radiusLg),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.dark.withOpacity(0.06),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
+                        color: AppColors.dark.withOpacity(0.06),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -420,25 +394,19 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                     Row(
                       children: [
                         AppAvatar(
-                          name: data['applicantName'] ?? 'User',
-                          imageUrl: data['applicantAvatarUrl'],
-                          size: 42,
-                        ),
+                            name: data['applicantName'] ?? 'User',
+                            imageUrl: data['applicantAvatarUrl'],
+                            size: 42),
                         const SizedBox(width: AppSizes.sm),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                data['applicantName'] ?? 'Пользователь',
-                                style: AppTypography.h3,
-                              ),
-                              Text(
-                                data['role'] ?? '',
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.primary,
-                                ),
-                              ),
+                              Text(data['applicantName'] ?? 'Пользователь',
+                                  style: AppTypography.h3),
+                              Text(data['role'] ?? '',
+                                  style: AppTypography.caption
+                                      .copyWith(color: AppColors.primary)),
                             ],
                           ),
                         ),
@@ -446,12 +414,10 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSizes.sm),
-                    Text(
-                      data['motivation'] ?? '',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.body,
-                    ),
+                    Text(data['motivation'] ?? '',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.body),
                     if (isPending) ...[
                       const SizedBox(height: AppSizes.md),
                       Row(
@@ -459,10 +425,9 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () => _updateApplicationStatus(
-                                context: context,
-                                applicationRef: doc.reference,
-                                accept: false,
-                              ),
+                                  context: context,
+                                  applicationRef: doc.reference,
+                                  accept: false),
                               icon: const Icon(Icons.close_rounded, size: 18),
                               label: const Text('Отклонить'),
                             ),
@@ -471,10 +436,9 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: () => _updateApplicationStatus(
-                                context: context,
-                                applicationRef: doc.reference,
-                                accept: true,
-                              ),
+                                  context: context,
+                                  applicationRef: doc.reference,
+                                  accept: true),
                               icon: const Icon(Icons.check_rounded, size: 18),
                               label: const Text('Принять'),
                             ),
@@ -497,7 +461,6 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
 
 class _ApplicationDetailsPage extends StatelessWidget {
   final DocumentReference applicationRef;
-
   const _ApplicationDetailsPage({required this.applicationRef});
 
   @override
@@ -511,7 +474,6 @@ class _ApplicationDetailsPage extends StatelessWidget {
           if (!snap.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-
           final data = snap.data!.data() as Map<String, dynamic>;
           final status = data['status'] ?? 'pending';
           final isPending = status == 'pending';
@@ -534,19 +496,16 @@ class _ApplicationDetailsPage extends StatelessWidget {
                       Row(
                         children: [
                           AppAvatar(
-                            name: data['applicantName'] ?? 'User',
-                            imageUrl: data['applicantAvatarUrl'],
-                            size: 56,
-                          ),
+                              name: data['applicantName'] ?? 'User',
+                              imageUrl: data['applicantAvatarUrl'],
+                              size: 56),
                           const SizedBox(width: AppSizes.md),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  data['applicantName'] ?? 'Пользователь',
-                                  style: AppTypography.h2,
-                                ),
+                                Text(data['applicantName'] ?? 'Пользователь',
+                                    style: AppTypography.h2),
                                 const SizedBox(height: 4),
                                 _StatusBadge(status: status),
                               ],
@@ -557,27 +516,24 @@ class _ApplicationDetailsPage extends StatelessWidget {
                       const SizedBox(height: AppSizes.md),
                       _InfoRow(label: 'Роль', value: data['role'] ?? '-'),
                       _InfoRow(
-                        label: 'Telegram',
-                        value: data['telegram'] ?? '-',
-                      ),
+                          label: 'Telegram', value: data['telegram'] ?? '-'),
                       _InfoRow(
-                        label: 'Портфолио',
-                        value: data['portfolioUrl'] ?? '-',
-                      ),
+                          label: 'Портфолио',
+                          value: data['portfolioUrl'] ?? '-'),
                       const SizedBox(height: AppSizes.md),
                       Text('Навыки', style: AppTypography.label),
                       const SizedBox(height: AppSizes.xs),
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
-                        children: skills
-                            .map((skill) => SkillChip(label: skill))
-                            .toList(),
+                        children:
+                            skills.map((s) => SkillChip(label: s)).toList(),
                       ),
                       const SizedBox(height: AppSizes.md),
                       Text('Мотивация', style: AppTypography.label),
                       const SizedBox(height: AppSizes.xs),
-                      Text(data['motivation'] ?? '', style: AppTypography.body),
+                      Text(data['motivation'] ?? '',
+                          style: AppTypography.body),
                     ],
                   ),
                 ),
@@ -588,10 +544,9 @@ class _ApplicationDetailsPage extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => _updateApplicationStatus(
-                            context: context,
-                            applicationRef: applicationRef,
-                            accept: false,
-                          ),
+                              context: context,
+                              applicationRef: applicationRef,
+                              accept: false),
                           icon: const Icon(Icons.close_rounded),
                           label: const Text('Отклонить'),
                         ),
@@ -600,10 +555,9 @@ class _ApplicationDetailsPage extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => _updateApplicationStatus(
-                            context: context,
-                            applicationRef: applicationRef,
-                            accept: true,
-                          ),
+                              context: context,
+                              applicationRef: applicationRef,
+                              accept: true),
                           icon: const Icon(Icons.check_rounded),
                           label: const Text('Принять'),
                         ),
@@ -628,10 +582,7 @@ class _MyApplicationsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      return const Center(child: Text('Не авторизован'));
-    }
+    if (user == null) return const Center(child: Text('Не авторизован'));
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -643,23 +594,18 @@ class _MyApplicationsTab extends StatelessWidget {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-
         if (!snap.hasData || snap.data!.docs.isEmpty) {
           return Center(
-            child: Text(
-              'У вас пока нет заявок',
-              style: AppTypography.h3.copyWith(color: AppColors.grey),
-            ),
+            child: Text('У вас пока нет заявок',
+                style: AppTypography.h3.copyWith(color: AppColors.grey)),
           );
         }
 
-        final docs = snap.data!.docs;
-
         return ListView.builder(
           padding: const EdgeInsets.all(AppSizes.md),
-          itemCount: docs.length,
+          itemCount: snap.data!.docs.length,
           itemBuilder: (context, i) {
-            final data = docs[i].data() as Map<String, dynamic>;
+            final data = snap.data!.docs[i].data() as Map<String, dynamic>;
             final status = data['status'] ?? 'pending';
 
             return Container(
@@ -670,28 +616,23 @@ class _MyApplicationsTab extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppSizes.radiusLg),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.dark.withOpacity(0.06),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
+                      color: AppColors.dark.withOpacity(0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4)),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    data['projectTitle'] ?? 'Проект',
-                    style: AppTypography.h3,
-                  ),
+                  Text(data['projectTitle'] ?? 'Проект',
+                      style: AppTypography.h3),
                   const SizedBox(height: AppSizes.xs),
                   _StatusBadge(status: status),
                   const SizedBox(height: AppSizes.sm),
-                  Text(
-                    data['motivation'] ?? '',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.body,
-                  ),
+                  Text(data['motivation'] ?? '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.body),
                 ],
               ),
             );
@@ -711,39 +652,26 @@ Future<void> _updateApplicationStatus({
 }) async {
   try {
     final db = FirebaseFirestore.instance;
-
     await db.runTransaction((transaction) async {
       final appSnap = await transaction.get(applicationRef);
-
-      if (!appSnap.exists) {
-        throw Exception('Заявка не найдена');
-      }
+      if (!appSnap.exists) throw Exception('Заявка не найдена');
 
       final appData = appSnap.data() as Map<String, dynamic>;
-      final currentStatus = appData['status'] ?? 'pending';
-
-      if (currentStatus != 'pending') {
-        return;
-      }
+      if ((appData['status'] ?? 'pending') != 'pending') return;
 
       if (accept) {
         final projectId = appData['projectId'] as String;
         final projectRef = db.collection('projects').doc(projectId);
         final projectSnap = await transaction.get(projectRef);
-
-        if (!projectSnap.exists) {
-          throw Exception('Проект не найден');
-        }
+        if (!projectSnap.exists) throw Exception('Проект не найден');
 
         final projectData = projectSnap.data() as Map<String, dynamic>;
-
         final filledField = projectData.containsKey('filledSlots')
             ? 'filledSlots'
             : 'filled_slots';
         final totalField = projectData.containsKey('totalSlots')
             ? 'totalSlots'
             : 'total_slots';
-
         final filledSlots = (projectData[filledField] ?? 0) as int;
         final totalSlots = (projectData[totalField] ?? 0) as int;
 
@@ -751,8 +679,8 @@ Future<void> _updateApplicationStatus({
           throw Exception('Свободных мест больше нет');
         }
 
-        transaction.update(projectRef, {filledField: FieldValue.increment(1)});
-
+        transaction.update(
+            projectRef, {filledField: FieldValue.increment(1)});
         transaction.update(applicationRef, {
           'status': 'accepted',
           'updatedAt': FieldValue.serverTimestamp(),
@@ -765,13 +693,11 @@ Future<void> _updateApplicationStatus({
       }
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(accept ? 'Заявка принята' : 'Заявка отклонена')),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(accept ? 'Заявка принята' : 'Заявка отклонена')));
   } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Ошибка: $e'), backgroundColor: AppColors.error));
   }
 }
 
@@ -779,7 +705,6 @@ Future<void> _updateApplicationStatus({
 
 class _StatusBadge extends StatelessWidget {
   final String status;
-
   const _StatusBadge({required this.status});
 
   @override
@@ -791,22 +716,29 @@ class _StatusBadge extends StatelessWidget {
       case 'accepted':
       case 'approved':
         color = AppColors.success;
-        text = 'approved';
+        text = 'Принято';
         break;
       case 'rejected':
         color = AppColors.error;
-        text = 'rejected';
+        text = 'Отклонено';
         break;
       default:
         color = AppColors.primary;
-        text = 'pending';
+        text = 'На рассмотрении';
     }
 
-    return Text(
-      'Статус: $text',
-      style: AppTypography.caption.copyWith(
-        color: color,
-        fontWeight: FontWeight.w600,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: AppTypography.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -815,7 +747,6 @@ class _StatusBadge extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
-
   const _InfoRow({required this.label, required this.value});
 
   @override
@@ -827,10 +758,9 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 90,
-            child: Text(
-              label,
-              style: AppTypography.caption.copyWith(color: AppColors.grey),
-            ),
+            child: Text(label,
+                style:
+                    AppTypography.caption.copyWith(color: AppColors.grey)),
           ),
           Expanded(child: Text(value, style: AppTypography.body)),
         ],
@@ -853,13 +783,13 @@ class _ProjectCardWithApplicationDot extends StatelessWidget {
     return Stack(
       children: [
         ProjectCard(project: project),
-
         if (pendingCount > 0)
           Positioned(
             top: 12,
             right: 12,
             child: Container(
-              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              constraints:
+                  const BoxConstraints(minWidth: 24, minHeight: 24),
               padding: const EdgeInsets.symmetric(horizontal: 7),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
@@ -867,7 +797,8 @@ class _ProjectCardWithApplicationDot extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+                borderRadius:
+                    BorderRadius.circular(AppSizes.radiusFull),
                 border: Border.all(color: AppColors.white, width: 2),
               ),
               child: Center(
@@ -882,22 +813,6 @@ class _ProjectCardWithApplicationDot extends StatelessWidget {
               ),
             ),
           ),
-      ],
-    );
-  }
-}
-
-class _StatBadge extends StatelessWidget {
-  final String value;
-  final String label;
-  const _StatBadge({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value, style: AppTypography.h2),
-        Text(label, style: AppTypography.caption),
       ],
     );
   }
