@@ -19,7 +19,6 @@ class FirestoreApplicationRepository implements ApplicationRepository {
   }) async {
     final user = _auth.currentUser!;
 
-    // Получаем название проекта
     final projectDoc = await _db.collection('projects').doc(projectId).get();
     final projectTitle = (projectDoc.data() as Map)['title'] ?? '';
 
@@ -40,9 +39,49 @@ class FirestoreApplicationRepository implements ApplicationRepository {
     return getApplicationById(ref.id);
   }
 
+  /// Отзыв заявки — удаляет заявку и если она была принята,
+  /// освобождает слот в проекте
+  Future<void> withdrawApplication(String applicationId) async {
+    await _db.runTransaction((transaction) async {
+      final appRef = _db.collection('applications').doc(applicationId);
+      final appSnap = await transaction.get(appRef);
+
+      if (!appSnap.exists) throw Exception('Заявка не найдена');
+
+      final data = appSnap.data() as Map<String, dynamic>;
+      final status = data['status'] ?? 'pending';
+      final projectId = data['projectId'] as String;
+
+      // Если заявка была принята — освобождаем слот
+      if (status == 'accepted') {
+        final projectRef = _db.collection('projects').doc(projectId);
+        final projectSnap = await transaction.get(projectRef);
+
+        if (projectSnap.exists) {
+          final projectData = projectSnap.data() as Map<String, dynamic>;
+          final filledField = projectData.containsKey('filledSlots')
+              ? 'filledSlots'
+              : 'filled_slots';
+          final currentFilled = (projectData[filledField] ?? 0) as int;
+
+          if (currentFilled > 0) {
+            transaction.update(projectRef, {
+              filledField: FieldValue.increment(-1),
+            });
+          }
+        }
+      }
+
+      // Удаляем заявку
+      transaction.delete(appRef);
+    });
+  }
+
   @override
-  Future<List<ApplicationEntity>> getApplicationsForProject(String projectId) async {
-    final snap = await _db.collection('applications')
+  Future<List<ApplicationEntity>> getApplicationsForProject(
+      String projectId) async {
+    final snap = await _db
+        .collection('applications')
         .where('projectId', isEqualTo: projectId)
         .orderBy('createdAt', descending: true)
         .get();
@@ -51,7 +90,8 @@ class FirestoreApplicationRepository implements ApplicationRepository {
 
   @override
   Future<List<ApplicationEntity>> getMyApplications() async {
-    final snap = await _db.collection('applications')
+    final snap = await _db
+        .collection('applications')
         .where('applicantId', isEqualTo: _uid)
         .orderBy('createdAt', descending: true)
         .get();
@@ -60,9 +100,10 @@ class FirestoreApplicationRepository implements ApplicationRepository {
 
   @override
   Future<ApplicationEntity> updateApplicationStatus(
-    String applicationId, ApplicationStatus status,
+    String applicationId,
+    ApplicationStatus status,
   ) async {
-    final statusStr = status.name; // 'pending' / 'accepted' / 'rejected'
+    final statusStr = status.name;
     await _db.collection('applications').doc(applicationId).update({
       'status': statusStr,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -97,7 +138,8 @@ class FirestoreApplicationRepository implements ApplicationRepository {
         (s) => s.name == d['status'],
         orElse: () => ApplicationStatus.pending,
       ),
-      createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt:
+          (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 }

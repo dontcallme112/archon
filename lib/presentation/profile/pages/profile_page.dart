@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:student_app/domain/repositories/firestore_user_repository.dart';
-import 'package:student_app/presentation/common/widgets/project_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:student_app/presentation/profile/bloc/profile_bloc.dart';
@@ -138,9 +137,8 @@ class _ProfilePageState extends State<ProfilePage>
                         user.portfolioUrl!.isNotEmpty)
                       Text(
                         user.portfolioUrl!,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.primary,
-                        ),
+                        style: AppTypography.caption
+                            .copyWith(color: AppColors.primary),
                       ),
                     if (user.telegram != null && user.telegram!.isNotEmpty)
                       Text(user.telegram!, style: AppTypography.caption),
@@ -248,6 +246,7 @@ class _MyProjectsTab extends StatelessWidget {
             final project = sortedProjects[i];
             final pendingCount = pendingCounts[project.id] ?? 0;
 
+            // GestureDetector без AbsorbPointer — нажатие работает
             return GestureDetector(
               onTap: () => Navigator.push(
                 context,
@@ -255,16 +254,207 @@ class _MyProjectsTab extends StatelessWidget {
                   builder: (_) => _OwnerProjectPage(project: project),
                 ),
               ),
-              child: AbsorbPointer(
-                child: _ProjectCardWithApplicationDot(
-                  project: project,
-                  pendingCount: pendingCount,
-                ),
+              child: _MyProjectCard(
+                project: project,
+                pendingCount: pendingCount,
               ),
             );
           },
         );
       },
+    );
+  }
+}
+
+// ─── MY PROJECT CARD ─────────────────────────────────────────────────────
+
+class _MyProjectCard extends StatelessWidget {
+  final ProjectEntity project;
+  final int pendingCount;
+
+  const _MyProjectCard({
+    required this.project,
+    required this.pendingCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: AppSizes.md),
+          padding: const EdgeInsets.all(AppSizes.md),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+            border: Border.all(
+                color: AppColors.primary.withOpacity(0.3), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.dark.withOpacity(0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Теги
+              Row(
+                children: [
+                  _Tag(
+                    label: project.category,
+                    color: AppColors.primarySurface,
+                    textColor: AppColors.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  _Tag(
+                    label: project.level.toUpperCase(),
+                    color: const Color(0xFFF0F4FF),
+                    textColor: const Color(0xFF3D5AFE),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.sm),
+
+              Text(
+                project.title,
+                style: AppTypography.h3,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+
+              if (project.shortDescription.isNotEmpty)
+                Text(
+                  project.shortDescription,
+                  style: AppTypography.body
+                      .copyWith(color: AppColors.darkGrey, height: 1.4),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              const SizedBox(height: AppSizes.sm),
+
+              if (project.requiredSkills.isNotEmpty)
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: project.requiredSkills
+                      .take(4)
+                      .map((s) => SkillChip(label: s))
+                      .toList(),
+                ),
+              const SizedBox(height: AppSizes.sm),
+
+              Row(
+                children: [
+                  DeadlineBadge(deadline: project.deadline),
+                  const Spacer(),
+                  Text(
+                    '${project.filledSlots}/${project.totalSlots} мест',
+                    style:
+                        AppTypography.caption.copyWith(color: AppColors.grey),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSizes.sm),
+
+              // Кнопки
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          context.push('/project/${project.id}/edit'),
+                      icon: const Icon(Icons.edit_rounded, size: 16),
+                      label: const Text('Редактировать'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize:
+                            const Size(0, AppSizes.buttonHeight - 8),
+                        textStyle: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => context
+                          .push('/project/${project.id}/applications'),
+                      icon: const Icon(Icons.people_rounded, size: 16),
+                      label: Text(pendingCount > 0
+                          ? 'Заявки ($pendingCount)'
+                          : 'Заявки'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize:
+                            const Size(0, AppSizes.buttonHeight - 8),
+                        textStyle: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // Бейдж с количеством заявок
+        if (pendingCount > 0)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              constraints:
+                  const BoxConstraints(minWidth: 22, minHeight: 22),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+                border: Border.all(color: AppColors.white, width: 2),
+              ),
+              child: Center(
+                child: Text(
+                  pendingCount > 99 ? '99+' : '$pendingCount',
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _Tag extends StatelessWidget {
+  final String label;
+  final Color color;
+  final Color textColor;
+
+  const _Tag({
+    required this.label,
+    required this.color,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.caption.copyWith(
+          color: textColor,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -316,12 +506,28 @@ class _OwnerProjectInfoTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AbsorbPointer(child: ProjectCard(project: project)),
-          const SizedBox(height: AppSizes.md),
-          Text('Описание проекта', style: AppTypography.h3),
           const SizedBox(height: AppSizes.sm),
-          Text(project.fullDescription,
-              style: AppTypography.body.copyWith(color: AppColors.darkGrey)),
+          Text(project.title, style: AppTypography.h1),
+          const SizedBox(height: AppSizes.md),
+          if (project.fullDescription.isNotEmpty)
+            Text(project.fullDescription,
+                style:
+                    AppTypography.body.copyWith(color: AppColors.darkGrey))
+          else
+            Text('Описание не указано',
+                style: AppTypography.body.copyWith(color: AppColors.grey)),
+          const SizedBox(height: AppSizes.lg),
+          if (project.requiredSkills.isNotEmpty) ...[
+            Text('Нужные навыки', style: AppTypography.h3),
+            const SizedBox(height: AppSizes.sm),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: project.requiredSkills
+                  .map((s) => SkillChip(label: s))
+                  .toList(),
+            ),
+          ],
         ],
       ),
     );
@@ -345,8 +551,7 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
         }
         if (snap.hasError) {
           return Center(
-            child: Text('Ошибка загрузки заявок: ${snap.error}',
-                textAlign: TextAlign.center,
+            child: Text('Ошибка: ${snap.error}',
                 style: AppTypography.body.copyWith(color: AppColors.error)),
           );
         }
@@ -357,12 +562,11 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
           );
         }
 
-        final docs = snap.data!.docs;
         return ListView.builder(
           padding: const EdgeInsets.all(AppSizes.md),
-          itemCount: docs.length,
+          itemCount: snap.data!.docs.length,
           itemBuilder: (context, i) {
-            final doc = docs[i];
+            final doc = snap.data!.docs[i];
             final data = doc.data() as Map<String, dynamic>;
             final status = data['status'] ?? 'pending';
             final isPending = status == 'pending';
@@ -576,6 +780,8 @@ class _ApplicationDetailsPage extends StatelessWidget {
 
 // ─── MY APPLICATIONS TAB ─────────────────────────────────────────────────
 
+// Замени класс _MyApplicationsTab в profile_page.dart на этот
+
 class _MyApplicationsTab extends StatelessWidget {
   const _MyApplicationsTab();
 
@@ -605,8 +811,10 @@ class _MyApplicationsTab extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           itemCount: snap.data!.docs.length,
           itemBuilder: (context, i) {
-            final data = snap.data!.docs[i].data() as Map<String, dynamic>;
+            final doc = snap.data!.docs[i];
+            final data = doc.data() as Map<String, dynamic>;
             final status = data['status'] ?? 'pending';
+            final isAccepted = status == 'accepted';
 
             return Container(
               margin: const EdgeInsets.only(bottom: AppSizes.md),
@@ -624,15 +832,49 @@ class _MyApplicationsTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(data['projectTitle'] ?? 'Проект',
-                      style: AppTypography.h3),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(data['projectTitle'] ?? 'Проект',
+                            style: AppTypography.h3),
+                      ),
+                      _StatusBadge(status: status),
+                    ],
+                  ),
                   const SizedBox(height: AppSizes.xs),
-                  _StatusBadge(status: status),
+                  if (data['role'] != null)
+                    Text(data['role'],
+                        style: AppTypography.caption
+                            .copyWith(color: AppColors.primary)),
                   const SizedBox(height: AppSizes.sm),
                   Text(data['motivation'] ?? '',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.body),
+                  const SizedBox(height: AppSizes.md),
+
+                  // Кнопка отзыва — для pending и accepted
+                  if (status == 'pending' || isAccepted)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _confirmWithdraw(
+                          context: context,
+                          applicationId: doc.id,
+                          isAccepted: isAccepted,
+                        ),
+                        icon: const Icon(Icons.undo_rounded, size: 16),
+                        label: Text(isAccepted
+                            ? 'Покинуть проект'
+                            : 'Отозвать заявку'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error),
+                          minimumSize:
+                              const Size(0, AppSizes.buttonHeight - 8),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             );
@@ -640,6 +882,96 @@ class _MyApplicationsTab extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _confirmWithdraw({
+    required BuildContext context,
+    required String applicationId,
+    required bool isAccepted,
+  }) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.radiusLg)),
+        title: Text(isAccepted ? 'Покинуть проект?' : 'Отозвать заявку?'),
+        content: Text(isAccepted
+            ? 'Вы покинете проект и освободите своё место. Это действие нельзя отменить.'
+            : 'Ваша заявка будет удалена. Вы сможете подать заявку снова.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _withdraw(context: context, applicationId: applicationId);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error),
+            child: Text(isAccepted ? 'Покинуть' : 'Отозвать'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _withdraw({
+    required BuildContext context,
+    required String applicationId,
+  }) async {
+    try {
+      final db = FirebaseFirestore.instance;
+
+      await db.runTransaction((transaction) async {
+        final appRef = db.collection('applications').doc(applicationId);
+        final appSnap = await transaction.get(appRef);
+
+        if (!appSnap.exists) throw Exception('Заявка не найдена');
+
+        final data = appSnap.data() as Map<String, dynamic>;
+        final status = data['status'] ?? 'pending';
+        final projectId = data['projectId'] as String;
+
+        // Если заявка принята — освобождаем слот
+        if (status == 'accepted') {
+          final projectRef = db.collection('projects').doc(projectId);
+          final projectSnap = await transaction.get(projectRef);
+
+          if (projectSnap.exists) {
+            final projectData = projectSnap.data() as Map<String, dynamic>;
+            final filledField = projectData.containsKey('filledSlots')
+                ? 'filledSlots'
+                : 'filled_slots';
+            final currentFilled = (projectData[filledField] ?? 0) as int;
+
+            if (currentFilled > 0) {
+              transaction.update(projectRef,
+                  {filledField: FieldValue.increment(-1)});
+            }
+          }
+        }
+
+        // Удаляем заявку
+        transaction.delete(appRef);
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Заявка отозвана'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Ошибка: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
   }
 }
 
@@ -765,55 +1097,6 @@ class _InfoRow extends StatelessWidget {
           Expanded(child: Text(value, style: AppTypography.body)),
         ],
       ),
-    );
-  }
-}
-
-class _ProjectCardWithApplicationDot extends StatelessWidget {
-  final ProjectEntity project;
-  final int pendingCount;
-
-  const _ProjectCardWithApplicationDot({
-    required this.project,
-    required this.pendingCount,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ProjectCard(project: project),
-        if (pendingCount > 0)
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              constraints:
-                  const BoxConstraints(minWidth: 24, minHeight: 24),
-              padding: const EdgeInsets.symmetric(horizontal: 7),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryDark],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius:
-                    BorderRadius.circular(AppSizes.radiusFull),
-                border: Border.all(color: AppColors.white, width: 2),
-              ),
-              child: Center(
-                child: Text(
-                  pendingCount > 99 ? '99+' : '$pendingCount',
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

@@ -139,7 +139,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     hint: '••••••••',
                     label: 'Пароль',
                     controller: _passwordController,
-                    maxLines: 1,
+                    obscureText: _obscurePassword,
                     prefixIcon: const Icon(Icons.lock_outline_rounded,
                         color: AppColors.grey, size: 20),
                     suffixIcon: IconButton(
@@ -166,7 +166,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     hint: '••••••••',
                     label: 'Подтвердить пароль',
                     controller: _confirmController,
-                    maxLines: 1,
+                    obscureText: _obscureConfirm,
                     prefixIcon: const Icon(Icons.lock_outline_rounded,
                         color: AppColors.grey, size: 20),
                     suffixIcon: IconButton(

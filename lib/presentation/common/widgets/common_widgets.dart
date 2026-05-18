@@ -80,6 +80,7 @@ class AppTextField extends StatelessWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final List<TextInputFormatter>? inputFormatters;
+  final bool obscureText; // ← скрытие текста для пароля
 
   const AppTextField({
     super.key,
@@ -92,6 +93,7 @@ class AppTextField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.inputFormatters,
+    this.obscureText = false,
   });
 
   @override
@@ -105,7 +107,8 @@ class AppTextField extends StatelessWidget {
         ],
         TextFormField(
           controller: controller,
-          maxLines: maxLines,
+          maxLines: obscureText ? 1 : maxLines,
+          obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,
           inputFormatters: inputFormatters,
@@ -251,7 +254,6 @@ class DeadlineBadge extends StatelessWidget {
 
   const DeadlineBadge({super.key, required this.deadline});
 
-  /// Парсим строку "20.6.2026" → DateTime → "20 июня 2026 г."
   String _formatDeadline(String raw) {
     try {
       final parts = raw.split('.');

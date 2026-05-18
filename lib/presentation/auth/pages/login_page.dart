@@ -146,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                     hint: '••••••••',
                     label: 'Пароль',
                     controller: _passwordController,
-                    maxLines: 1,
+                    obscureText: _obscurePassword,
                     prefixIcon: const Icon(Icons.lock_outline_rounded,
                         color: AppColors.grey, size: 20),
                     suffixIcon: IconButton(
