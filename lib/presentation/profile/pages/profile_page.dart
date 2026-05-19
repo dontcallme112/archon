@@ -84,7 +84,7 @@ class _ProfilePageState extends State<ProfilePage>
                 indicatorColor: AppColors.primary,
                 tabs: [
                   Tab(text: 'Мои проекты (${projects.length})'),
-                  const Tab(text: 'Мои заявки'),
+                  const Tab(text: 'Мои отклики'),
                 ],
               ),
             ),
@@ -137,8 +137,9 @@ class _ProfilePageState extends State<ProfilePage>
                         user.portfolioUrl!.isNotEmpty)
                       Text(
                         user.portfolioUrl!,
-                        style: AppTypography.caption
-                            .copyWith(color: AppColors.primary),
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
                     if (user.telegram != null && user.telegram!.isNotEmpty)
                       Text(user.telegram!, style: AppTypography.caption),
@@ -184,15 +185,22 @@ class _MyProjectsTab extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.folder_open_rounded,
-                  size: 64, color: AppColors.lightGrey),
+              const Icon(
+                Icons.folder_open_rounded,
+                size: 64,
+                color: AppColors.lightGrey,
+              ),
               const SizedBox(height: AppSizes.md),
-              Text('Нет проектов',
-                  style: AppTypography.h3.copyWith(color: AppColors.grey)),
+              Text(
+                'Нет проектов',
+                style: AppTypography.h3.copyWith(color: AppColors.grey),
+              ),
               const SizedBox(height: AppSizes.sm),
-              Text('Создай первый проект',
-                  style: AppTypography.body.copyWith(color: AppColors.grey),
-                  textAlign: TextAlign.center),
+              Text(
+                'Создай первый проект',
+                style: AppTypography.body.copyWith(color: AppColors.grey),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: AppSizes.lg),
               SizedBox(
                 width: 230,
@@ -272,10 +280,7 @@ class _MyProjectCard extends StatelessWidget {
   final ProjectEntity project;
   final int pendingCount;
 
-  const _MyProjectCard({
-    required this.project,
-    required this.pendingCount,
-  });
+  const _MyProjectCard({required this.project, required this.pendingCount});
 
   @override
   Widget build(BuildContext context) {
@@ -288,7 +293,9 @@ class _MyProjectCard extends StatelessWidget {
             color: AppColors.white,
             borderRadius: BorderRadius.circular(AppSizes.radiusLg),
             border: Border.all(
-                color: AppColors.primary.withOpacity(0.3), width: 1.5),
+              color: AppColors.primary.withOpacity(0.3),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
                 color: AppColors.dark.withOpacity(0.06),
@@ -329,8 +336,10 @@ class _MyProjectCard extends StatelessWidget {
               if (project.shortDescription.isNotEmpty)
                 Text(
                   project.shortDescription,
-                  style: AppTypography.body
-                      .copyWith(color: AppColors.darkGrey, height: 1.4),
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.darkGrey,
+                    height: 1.4,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -353,8 +362,9 @@ class _MyProjectCard extends StatelessWidget {
                   const Spacer(),
                   Text(
                     '${project.filledSlots}/${project.totalSlots} мест',
-                    style:
-                        AppTypography.caption.copyWith(color: AppColors.grey),
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.grey,
+                    ),
                   ),
                 ],
               ),
@@ -370,8 +380,7 @@ class _MyProjectCard extends StatelessWidget {
                       icon: const Icon(Icons.edit_rounded, size: 16),
                       label: const Text('Редактировать'),
                       style: OutlinedButton.styleFrom(
-                        minimumSize:
-                            const Size(0, AppSizes.buttonHeight - 8),
+                        minimumSize: const Size(0, AppSizes.buttonHeight - 8),
                         textStyle: const TextStyle(fontSize: 13),
                       ),
                     ),
@@ -379,15 +388,14 @@ class _MyProjectCard extends StatelessWidget {
                   const SizedBox(width: AppSizes.sm),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => context
-                          .push('/project/${project.id}/applications'),
+                      onPressed: () =>
+                          context.push('/project/${project.id}/applications'),
                       icon: const Icon(Icons.people_rounded, size: 16),
-                      label: Text(pendingCount > 0
-                          ? 'Заявки ($pendingCount)'
-                          : 'Заявки'),
+                      label: Text(
+                        pendingCount > 0 ? 'Заявки ($pendingCount)' : 'Заявки',
+                      ),
                       style: ElevatedButton.styleFrom(
-                        minimumSize:
-                            const Size(0, AppSizes.buttonHeight - 8),
+                        minimumSize: const Size(0, AppSizes.buttonHeight - 8),
                         textStyle: const TextStyle(fontSize: 13),
                       ),
                     ),
@@ -404,8 +412,7 @@ class _MyProjectCard extends StatelessWidget {
             top: 8,
             right: 8,
             child: Container(
-              constraints:
-                  const BoxConstraints(minWidth: 22, minHeight: 22),
+              constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
               padding: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
                 color: AppColors.error,
@@ -481,7 +488,10 @@ class _OwnerProjectPage extends StatelessWidget {
             ),
           ],
           bottom: const TabBar(
-            tabs: [Tab(text: 'Проект'), Tab(text: 'Заявки')],
+            tabs: [
+              Tab(text: 'Проект'),
+              Tab(text: 'Заявки'),
+            ],
           ),
         ),
         body: TabBarView(
@@ -510,12 +520,15 @@ class _OwnerProjectInfoTab extends StatelessWidget {
           Text(project.title, style: AppTypography.h1),
           const SizedBox(height: AppSizes.md),
           if (project.fullDescription.isNotEmpty)
-            Text(project.fullDescription,
-                style:
-                    AppTypography.body.copyWith(color: AppColors.darkGrey))
+            Text(
+              project.fullDescription,
+              style: AppTypography.body.copyWith(color: AppColors.darkGrey),
+            )
           else
-            Text('Описание не указано',
-                style: AppTypography.body.copyWith(color: AppColors.grey)),
+            Text(
+              'Описание не указано',
+              style: AppTypography.body.copyWith(color: AppColors.grey),
+            ),
           const SizedBox(height: AppSizes.lg),
           if (project.requiredSkills.isNotEmpty) ...[
             Text('Нужные навыки', style: AppTypography.h3),
@@ -551,14 +564,18 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
         }
         if (snap.hasError) {
           return Center(
-            child: Text('Ошибка: ${snap.error}',
-                style: AppTypography.body.copyWith(color: AppColors.error)),
+            child: Text(
+              'Ошибка: ${snap.error}',
+              style: AppTypography.body.copyWith(color: AppColors.error),
+            ),
           );
         }
         if (!snap.hasData || snap.data!.docs.isEmpty) {
           return Center(
-            child: Text('Заявок пока нет',
-                style: AppTypography.h3.copyWith(color: AppColors.grey)),
+            child: Text(
+              'Заявок пока нет',
+              style: AppTypography.h3.copyWith(color: AppColors.grey),
+            ),
           );
         }
 
@@ -587,9 +604,10 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppSizes.radiusLg),
                   boxShadow: [
                     BoxShadow(
-                        color: AppColors.dark.withOpacity(0.06),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4)),
+                      color: AppColors.dark.withOpacity(0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -598,19 +616,25 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                     Row(
                       children: [
                         AppAvatar(
-                            name: data['applicantName'] ?? 'User',
-                            imageUrl: data['applicantAvatarUrl'],
-                            size: 42),
+                          name: data['applicantName'] ?? 'User',
+                          imageUrl: data['applicantAvatarUrl'],
+                          size: 42,
+                        ),
                         const SizedBox(width: AppSizes.sm),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(data['applicantName'] ?? 'Пользователь',
-                                  style: AppTypography.h3),
-                              Text(data['role'] ?? '',
-                                  style: AppTypography.caption
-                                      .copyWith(color: AppColors.primary)),
+                              Text(
+                                data['applicantName'] ?? 'Пользователь',
+                                style: AppTypography.h3,
+                              ),
+                              Text(
+                                data['role'] ?? '',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.primary,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -618,10 +642,12 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSizes.sm),
-                    Text(data['motivation'] ?? '',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.body),
+                    Text(
+                      data['motivation'] ?? '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.body,
+                    ),
                     if (isPending) ...[
                       const SizedBox(height: AppSizes.md),
                       Row(
@@ -629,9 +655,10 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () => _updateApplicationStatus(
-                                  context: context,
-                                  applicationRef: doc.reference,
-                                  accept: false),
+                                context: context,
+                                applicationRef: doc.reference,
+                                accept: false,
+                              ),
                               icon: const Icon(Icons.close_rounded, size: 18),
                               label: const Text('Отклонить'),
                             ),
@@ -640,9 +667,10 @@ class _OwnerProjectApplicationsTab extends StatelessWidget {
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: () => _updateApplicationStatus(
-                                  context: context,
-                                  applicationRef: doc.reference,
-                                  accept: true),
+                                context: context,
+                                applicationRef: doc.reference,
+                                accept: true,
+                              ),
                               icon: const Icon(Icons.check_rounded, size: 18),
                               label: const Text('Принять'),
                             ),
@@ -700,16 +728,19 @@ class _ApplicationDetailsPage extends StatelessWidget {
                       Row(
                         children: [
                           AppAvatar(
-                              name: data['applicantName'] ?? 'User',
-                              imageUrl: data['applicantAvatarUrl'],
-                              size: 56),
+                            name: data['applicantName'] ?? 'User',
+                            imageUrl: data['applicantAvatarUrl'],
+                            size: 56,
+                          ),
                           const SizedBox(width: AppSizes.md),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(data['applicantName'] ?? 'Пользователь',
-                                    style: AppTypography.h2),
+                                Text(
+                                  data['applicantName'] ?? 'Пользователь',
+                                  style: AppTypography.h2,
+                                ),
                                 const SizedBox(height: 4),
                                 _StatusBadge(status: status),
                               ],
@@ -720,24 +751,27 @@ class _ApplicationDetailsPage extends StatelessWidget {
                       const SizedBox(height: AppSizes.md),
                       _InfoRow(label: 'Роль', value: data['role'] ?? '-'),
                       _InfoRow(
-                          label: 'Telegram', value: data['telegram'] ?? '-'),
+                        label: 'Telegram',
+                        value: data['telegram'] ?? '-',
+                      ),
                       _InfoRow(
-                          label: 'Портфолио',
-                          value: data['portfolioUrl'] ?? '-'),
+                        label: 'Портфолио',
+                        value: data['portfolioUrl'] ?? '-',
+                      ),
                       const SizedBox(height: AppSizes.md),
                       Text('Навыки', style: AppTypography.label),
                       const SizedBox(height: AppSizes.xs),
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
-                        children:
-                            skills.map((s) => SkillChip(label: s)).toList(),
+                        children: skills
+                            .map((s) => SkillChip(label: s))
+                            .toList(),
                       ),
                       const SizedBox(height: AppSizes.md),
                       Text('Мотивация', style: AppTypography.label),
                       const SizedBox(height: AppSizes.xs),
-                      Text(data['motivation'] ?? '',
-                          style: AppTypography.body),
+                      Text(data['motivation'] ?? '', style: AppTypography.body),
                     ],
                   ),
                 ),
@@ -748,9 +782,10 @@ class _ApplicationDetailsPage extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => _updateApplicationStatus(
-                              context: context,
-                              applicationRef: applicationRef,
-                              accept: false),
+                            context: context,
+                            applicationRef: applicationRef,
+                            accept: false,
+                          ),
                           icon: const Icon(Icons.close_rounded),
                           label: const Text('Отклонить'),
                         ),
@@ -759,9 +794,10 @@ class _ApplicationDetailsPage extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => _updateApplicationStatus(
-                              context: context,
-                              applicationRef: applicationRef,
-                              accept: true),
+                            context: context,
+                            applicationRef: applicationRef,
+                            accept: true,
+                          ),
                           icon: const Icon(Icons.check_rounded),
                           label: const Text('Принять'),
                         ),
@@ -802,8 +838,10 @@ class _MyApplicationsTab extends StatelessWidget {
         }
         if (!snap.hasData || snap.data!.docs.isEmpty) {
           return Center(
-            child: Text('У вас пока нет заявок',
-                style: AppTypography.h3.copyWith(color: AppColors.grey)),
+            child: Text(
+              'У вас пока нет заявок',
+              style: AppTypography.h3.copyWith(color: AppColors.grey),
+            ),
           );
         }
 
@@ -816,66 +854,93 @@ class _MyApplicationsTab extends StatelessWidget {
             final status = data['status'] ?? 'pending';
             final isAccepted = status == 'accepted';
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: AppSizes.md),
-              padding: const EdgeInsets.all(AppSizes.md),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-                boxShadow: [
-                  BoxShadow(
+            return InkWell(
+              onTap: () {
+                final projectId = data['projectId'];
+
+                if (projectId != null && projectId.toString().isNotEmpty) {
+                  context.push('/project/$projectId');
+                }
+              },
+              borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: AppSizes.md),
+                padding: const EdgeInsets.all(AppSizes.md),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+                  boxShadow: [
+                    BoxShadow(
                       color: AppColors.dark.withOpacity(0.06),
                       blurRadius: 16,
-                      offset: const Offset(0, 4)),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(data['projectTitle'] ?? 'Проект',
-                            style: AppTypography.h3),
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            data['projectTitle'] ?? 'Проект',
+                            style: AppTypography.h3,
+                          ),
+                        ),
+                        _StatusBadge(status: status),
+                      ],
+                    ),
+
+                    const SizedBox(height: AppSizes.xs),
+
+                    if (data['role'] != null)
+                      Text(
+                        data['role'],
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
-                      _StatusBadge(status: status),
-                    ],
-                  ),
-                  const SizedBox(height: AppSizes.xs),
-                  if (data['role'] != null)
-                    Text(data['role'],
-                        style: AppTypography.caption
-                            .copyWith(color: AppColors.primary)),
-                  const SizedBox(height: AppSizes.sm),
-                  Text(data['motivation'] ?? '',
+
+                    const SizedBox(height: AppSizes.sm),
+
+                    Text(
+                      data['motivation'] ?? '',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.body),
-                  const SizedBox(height: AppSizes.md),
+                      style: AppTypography.body,
+                    ),
 
-                  // Кнопка отзыва — для pending и accepted
-                  if (status == 'pending' || isAccepted)
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _confirmWithdraw(
-                          context: context,
-                          applicationId: doc.id,
-                          isAccepted: isAccepted,
-                        ),
-                        icon: const Icon(Icons.undo_rounded, size: 16),
-                        label: Text(isAccepted
-                            ? 'Покинуть проект'
-                            : 'Отозвать заявку'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.error,
-                          side: const BorderSide(color: AppColors.error),
-                          minimumSize:
-                              const Size(0, AppSizes.buttonHeight - 8),
+                    const SizedBox(height: AppSizes.md),
+
+                    // кнопка не должна открывать проект
+                    if (status == 'pending' || isAccepted)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            _confirmWithdraw(
+                              context: context,
+                              applicationId: doc.id,
+                              isAccepted: isAccepted,
+                            );
+                          },
+                          icon: const Icon(Icons.undo_rounded, size: 16),
+                          label: Text(
+                            isAccepted ? 'Покинуть проект' : 'Отозвать заявку',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.error,
+                            side: const BorderSide(color: AppColors.error),
+                            minimumSize: const Size(
+                              0,
+                              AppSizes.buttonHeight - 8,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -893,11 +958,14 @@ class _MyApplicationsTab extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.radiusLg)),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        ),
         title: Text(isAccepted ? 'Покинуть проект?' : 'Отозвать заявку?'),
-        content: Text(isAccepted
-            ? 'Вы покинете проект и освободите своё место. Это действие нельзя отменить.'
-            : 'Ваша заявка будет удалена. Вы сможете подать заявку снова.'),
+        content: Text(
+          isAccepted
+              ? 'Вы покинете проект и освободите своё место. Это действие нельзя отменить.'
+              : 'Ваша заявка будет удалена. Вы сможете подать заявку снова.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -908,8 +976,7 @@ class _MyApplicationsTab extends StatelessWidget {
               Navigator.pop(context);
               await _withdraw(context: context, applicationId: applicationId);
             },
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: Text(isAccepted ? 'Покинуть' : 'Отозвать'),
           ),
         ],
@@ -947,8 +1014,9 @@ class _MyApplicationsTab extends StatelessWidget {
             final currentFilled = (projectData[filledField] ?? 0) as int;
 
             if (currentFilled > 0) {
-              transaction.update(projectRef,
-                  {filledField: FieldValue.increment(-1)});
+              transaction.update(projectRef, {
+                filledField: FieldValue.increment(-1),
+              });
             }
           }
         }
@@ -958,18 +1026,22 @@ class _MyApplicationsTab extends StatelessWidget {
       });
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Заявка отозвана'),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Заявка отозвана'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Ошибка: $e'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -1011,8 +1083,7 @@ Future<void> _updateApplicationStatus({
           throw Exception('Свободных мест больше нет');
         }
 
-        transaction.update(
-            projectRef, {filledField: FieldValue.increment(1)});
+        transaction.update(projectRef, {filledField: FieldValue.increment(1)});
         transaction.update(applicationRef, {
           'status': 'accepted',
           'updatedAt': FieldValue.serverTimestamp(),
@@ -1025,11 +1096,13 @@ Future<void> _updateApplicationStatus({
       }
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(accept ? 'Заявка принята' : 'Заявка отклонена')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(accept ? 'Заявка принята' : 'Заявка отклонена')),
+    );
   } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Ошибка: $e'), backgroundColor: AppColors.error));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+    );
   }
 }
 
@@ -1090,9 +1163,10 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 90,
-            child: Text(label,
-                style:
-                    AppTypography.caption.copyWith(color: AppColors.grey)),
+            child: Text(
+              label,
+              style: AppTypography.caption.copyWith(color: AppColors.grey),
+            ),
           ),
           Expanded(child: Text(value, style: AppTypography.body)),
         ],
