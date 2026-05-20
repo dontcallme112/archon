@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../presentation/applications_management/bloc/app_mgmt_bloc.dart';
+import '../../domain/repositories/firestore_application_repository.dart';
+import '../../domain/usecases/other_usecases.dart';
 import '../../presentation/auth/pages/login_page.dart';
 import '../../presentation/auth/pages/register_page.dart';
 import '../../presentation/feed/pages/feed_page.dart';
@@ -107,15 +110,35 @@ class AppRouter {
       GoRoute(
         path: '/project/:id/applications',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) =>
-            ApplicationsManagementPage(projectId: state.pathParameters['id']!),
+        builder: (context, state) => BlocProvider(
+          create: (_) => AppMgmtBloc(
+            getApplications: GetProjectApplicationsUseCase(
+              FirestoreApplicationRepository(),
+            ),
+            updateStatus: UpdateApplicationStatusUseCase(
+              FirestoreApplicationRepository(),
+            ),
+          )..add(AppMgmtLoadRequested(state.pathParameters['id']!)),
+          child: ApplicationsManagementPage(
+              projectId: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/project/:id/applications/:appId',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => ApplicationDetailsPage(
-          projectId: state.pathParameters['id']!,
-          applicationId: state.pathParameters['appId']!,
+        builder: (context, state) => BlocProvider(
+          create: (_) => AppMgmtBloc(
+            getApplications: GetProjectApplicationsUseCase(
+              FirestoreApplicationRepository(),
+            ),
+            updateStatus: UpdateApplicationStatusUseCase(
+              FirestoreApplicationRepository(),
+            ),
+          )..add(AppMgmtLoadRequested(state.pathParameters['id']!)),
+          child: ApplicationDetailsPage(
+            projectId: state.pathParameters['id']!,
+            applicationId: state.pathParameters['appId']!,
+          ),
         ),
       ),
       GoRoute(
