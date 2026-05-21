@@ -28,8 +28,8 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // FlutterNativeSplash.remove() убран отсюда —
-  // теперь вызывается в SplashPage.initState()
+  FlutterNativeSplash.remove();
+
   runApp(const ProjectHubApp());
 }
 

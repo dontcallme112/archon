@@ -75,13 +75,13 @@ class SettingsPage extends StatelessWidget {
 
                         _SettingsGroup(
                           children: [
-                            _SettingsTile(
-                              icon: Icons.image_outlined,
-                              iconColor: AppColors.primary,
-                              label: 'Изменить аватарку',
-                              showArrow: true,
-                              onTap: () => _changeAvatar(context),
-                            ),
+                            // _SettingsTile(
+                            //   icon: Icons.image_outlined,
+                            //   iconColor: AppColors.primary,
+                            //   label: 'Изменить аватарку',
+                            //   showArrow: true,
+                            //   onTap: () => _changeAvatar(context),
+                            // ),
                             const Divider(height: 1),
                             _SettingsTile(
                               icon: Icons.edit_outlined,

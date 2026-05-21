@@ -179,7 +179,7 @@ class _ApplyButton extends StatelessWidget {
         width: double.infinity,
         height: 44,
         child: ElevatedButton.icon(
-          onPressed: () => context.push('/register'),
+          onPressed: () => context.push('/login'),
           icon: const Icon(Icons.login_rounded, size: 16),
           label: const Text('Войти, чтобы откликнуться'),
         ),
@@ -250,7 +250,16 @@ class _ApplyButton extends StatelessWidget {
           width: double.infinity,
           height: 44,
           child: ElevatedButton.icon(
-            onPressed: () => context.push('/project/$projectId/apply'),
+            onPressed: () {
+              final currentUser = FirebaseAuth.instance.currentUser;
+
+              if (currentUser == null) {
+                context.push('/login');
+                return;
+              }
+
+              context.push('/project/$projectId/apply');
+            },
             icon: const Icon(Icons.send_rounded, size: 16),
             label: const Text('Откликнуться'),
           ),

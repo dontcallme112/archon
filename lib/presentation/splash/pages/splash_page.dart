@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
@@ -53,14 +52,10 @@ class _SplashPageState extends State<SplashPage>
     _controller.forward();
 
     // После анимации — навигация
+    // После анимации — всегда открываем главную
     Future.delayed(const Duration(milliseconds: 2200), () {
       if (!mounted) return;
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        context.go('/feed');
-      } else {
-        context.go('/login');
-      }
+      context.go('/feed');
     });
   }
 

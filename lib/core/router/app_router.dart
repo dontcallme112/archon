@@ -27,25 +27,42 @@ class AppRouter {
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/splash', // ← стартуем со splash
+    initialLocation: '/feed',
 
     redirect: (context, state) {
       final location = state.matchedLocation;
 
-      // Splash не редиректим — он сам решает куда идти
-      if (location == '/splash') return null;
-
       final user = FirebaseAuth.instance.currentUser;
       final isLoggedIn = user != null;
 
-      final protectedRoutes = ['/project/create', '/profile'];
+      final isAuthRoute =
+          location == '/login' ||
+          location == '/register' ||
+          location == '/onboarding';
 
-      final isAuthRoute = location == '/login' || location == '/register';
-      final isProtected = protectedRoutes.any((r) => location.startsWith(r));
+      final protectedRoutes = ['/project/create', '/settings'];
 
-      if (!isLoggedIn && isProtected) return '/login';
-      if (!isLoggedIn && !isAuthRoute) return '/login';
-      if (isLoggedIn && isAuthRoute) return '/feed';
+      final isApplyRoute =
+          location.startsWith('/project/') && location.endsWith('/apply');
+
+      final isEditRoute =
+          location.startsWith('/project/') && location.endsWith('/edit');
+
+      final isApplicationsRoute = location.contains('/applications');
+
+      final isProtected =
+          protectedRoutes.any((r) => location.startsWith(r)) ||
+          isApplyRoute ||
+          isEditRoute ||
+          isApplicationsRoute;
+
+      if (!isLoggedIn && isProtected) {
+        return '/login';
+      }
+
+      if (isLoggedIn && isAuthRoute) {
+        return '/feed';
+      }
 
       return null;
     },

@@ -39,6 +39,12 @@ class _ProfilePageState extends State<ProfilePage>
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const _GuestProfileView();
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: BlocProvider<ProfileBloc>(
@@ -1191,4 +1197,84 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_) => false;
+}
+
+class _GuestProfileView extends StatelessWidget {
+  const _GuestProfileView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.md),
+          child: Column(
+            children: [
+              Row(children: [Text('Профиль', style: AppTypography.h2)]),
+              const SizedBox(height: AppSizes.xl),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSizes.lg),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.dark.withOpacity(0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 76,
+                      height: 76,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primarySurface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.person_outline_rounded,
+                        size: 40,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.md),
+
+                    Text(
+                      'Войдите в аккаунт',
+                      style: AppTypography.h3,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSizes.xs),
+
+                    Text(
+                      'После регистрации здесь появятся ваши проекты, заявки и настройки профиля.',
+                      style: AppTypography.body.copyWith(color: AppColors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSizes.lg),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: AppSizes.buttonHeight,
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.push('/login'),
+                        icon: const Icon(Icons.login_rounded, size: 18),
+                        label: const Text('Войти или зарегистрироваться'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

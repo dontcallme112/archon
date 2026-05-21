@@ -45,8 +45,11 @@ class _ProjectPageView extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline,
-                      size: 48, color: AppColors.error),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: AppColors.error,
+                  ),
                   const SizedBox(height: AppSizes.md),
                   Text(
                     state.errorMessage ?? 'Проект не найден',
@@ -96,8 +99,7 @@ class _ProjectContent extends StatelessWidget {
                 IconButton(
                   tooltip: 'Редактировать',
                   icon: const Icon(Icons.edit_rounded, color: AppColors.dark),
-                  onPressed: () =>
-                      context.push('/project/${project.id}/edit'),
+                  onPressed: () => context.push('/project/${project.id}/edit'),
                 ),
             ],
           ),
@@ -118,43 +120,45 @@ class _ProjectContent extends StatelessWidget {
                   if (project.fullDescription.isNotEmpty)
                     Text(
                       project.fullDescription,
-                      style: AppTypography.body
-                          .copyWith(color: AppColors.darkGrey),
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.darkGrey,
+                      ),
                     )
                   else
                     Text(
                       'Описание не указано',
-                      style:
-                          AppTypography.body.copyWith(color: AppColors.grey),
+                      style: AppTypography.body.copyWith(color: AppColors.grey),
                     ),
                   const SizedBox(height: AppSizes.lg),
 
-                  _InfoCard(children: [
-                    _InfoRow(
-                      icon: Icons.calendar_today_rounded,
-                      label: 'Дедлайн',
-                      value: project.deadline,
-                    ),
-                    const Divider(),
-                    _InfoRow(
-                      icon: Icons.people_rounded,
-                      label: 'Команда',
-                      value:
-                          'Уже в команде: ${project.filledSlots} из ${project.totalSlots}',
-                    ),
-                    const Divider(),
-                    _InfoRow(
-                      icon: Icons.laptop_rounded,
-                      label: 'Формат',
-                      value: project.format,
-                    ),
-                    const Divider(),
-                    _InfoRow(
-                      icon: Icons.signal_cellular_alt_rounded,
-                      label: 'Уровень',
-                      value: project.level,
-                    ),
-                  ]),
+                  _InfoCard(
+                    children: [
+                      _InfoRow(
+                        icon: Icons.calendar_today_rounded,
+                        label: 'Дедлайн',
+                        value: project.deadline,
+                      ),
+                      const Divider(),
+                      _InfoRow(
+                        icon: Icons.people_rounded,
+                        label: 'Команда',
+                        value:
+                            'Уже в команде: ${project.filledSlots} из ${project.totalSlots}',
+                      ),
+                      const Divider(),
+                      _InfoRow(
+                        icon: Icons.laptop_rounded,
+                        label: 'Формат',
+                        value: project.format,
+                      ),
+                      const Divider(),
+                      _InfoRow(
+                        icon: Icons.signal_cellular_alt_rounded,
+                        label: 'Уровень',
+                        value: project.level,
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: AppSizes.md),
 
                   SectionHeader(title: 'Нужные навыки'),
@@ -171,8 +175,7 @@ class _ProjectContent extends StatelessWidget {
                   if (project.teamMembers.isNotEmpty) ...[
                     SectionHeader(title: 'Команда'),
                     const SizedBox(height: AppSizes.sm),
-                    ...project.teamMembers
-                        .map((m) => _TeamMemberTile(user: m)),
+                    ...project.teamMembers.map((m) => _TeamMemberTile(user: m)),
                     const SizedBox(height: AppSizes.md),
                   ],
 
@@ -186,8 +189,10 @@ class _ProjectContent extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Автор', style: AppTypography.caption),
-                              Text(project.author.name,
-                                  style: AppTypography.h4),
+                              Text(
+                                project.author.name,
+                                style: AppTypography.h4,
+                              ),
                             ],
                           ),
                         ],
@@ -211,8 +216,7 @@ class _ProjectContent extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           boxShadow: [
-            BoxShadow(
-                color: AppColors.dark.withOpacity(0.08), blurRadius: 16),
+            BoxShadow(color: AppColors.dark.withOpacity(0.08), blurRadius: 16),
           ],
         ),
         // Автору показываем кнопку управления заявками, остальным — откликнуться
@@ -224,8 +228,16 @@ class _ProjectContent extends StatelessWidget {
                 label: const Text('Заявки на проект'),
               )
             : ElevatedButton.icon(
-                onPressed: () =>
-                    context.push('/project/${project.id}/apply'),
+                onPressed: () {
+                  final user = FirebaseAuth.instance.currentUser;
+
+                  if (user == null) {
+                    context.push('/login');
+                    return;
+                  }
+
+                  context.push('/project/${project.id}/apply');
+                },
                 icon: const Icon(Icons.send_rounded, size: 18),
                 label: const Text('Откликнуться'),
               ),
@@ -248,8 +260,7 @@ class _InfoCard extends StatelessWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         boxShadow: [
-          BoxShadow(
-              color: AppColors.dark.withOpacity(0.04), blurRadius: 8),
+          BoxShadow(color: AppColors.dark.withOpacity(0.04), blurRadius: 8),
         ],
       ),
       child: Column(children: children),
@@ -261,8 +272,11 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _InfoRow(
-      {required this.icon, required this.label, required this.value});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -305,8 +319,10 @@ class _TeamMemberTile extends StatelessWidget {
             children: [
               Text(user.name, style: AppTypography.h4),
               if (user.skills.isNotEmpty)
-                Text(user.skills.take(2).join(', '),
-                    style: AppTypography.caption),
+                Text(
+                  user.skills.take(2).join(', '),
+                  style: AppTypography.caption,
+                ),
             ],
           ),
         ],
